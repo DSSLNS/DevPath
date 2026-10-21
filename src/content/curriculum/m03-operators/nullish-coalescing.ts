@@ -1,0 +1,402 @@
+import type { Lesson } from "@/content/types";
+
+export const nullishCoalescing: Lesson = {
+  id: "operators-nullish-coalescing",
+  slug: "nullish-coalescing",
+  title: "Nullish Coalescing (??)",
+  summary: "Provide default values only when a value is `null` or `undefined`, so valid values like `0`, `\"\"` and `false` are kept.",
+  difficulty: "beginner",
+  minutes: 20,
+  tech: ["javascript"],
+  tags: ["operators", "nullish coalescing", "??", "??=", "default values", "null", "undefined"],
+  objectives: [
+    "Use `??` to fall back to a default only when a value is `null` or `undefined`.",
+    "Explain the difference between `??` and `||`, and choose the right one.",
+    "Use the `??=` assignment operator to fill in missing properties.",
+    "Add the required parentheses when mixing `??` with `||` or `&&`.",
+  ],
+  prerequisites: ["operators-logical", "operators-short-circuit", "operators-truthy-falsy", "variables-undefined-null"],
+  intro: [
+    {
+      kind: "paragraph",
+      text: "Before 2020, the usual way to write a default value was `value || \"default\"`. It works — until the value is `0`, an empty string or `false`. Then `||` throws away a perfectly valid value because it is *falsy*. A volume of `0` becomes `50`; a deliberately empty nickname becomes `\"Guest\"`.",
+    },
+    {
+      kind: "paragraph",
+      text: "The **nullish coalescing operator** `??` fixes this. It only falls back when the left side is **nullish** — `null` or `undefined` — which are the values that really mean \"nothing here\". Everything else, including `0`, `\"\"` and `false`, is kept.",
+    },
+  ],
+  terms: [
+    { term: "Nullish", definition: "A value that is either `null` or `undefined`. Only these two are nullish." },
+    { term: "Nullish coalescing (`??`)", definition: "`a ?? b` returns `a` unless it is `null` or `undefined`, in which case it returns `b`." },
+    { term: "Nullish coalescing assignment (`??=`)", definition: "`a ??= b` assigns `b` to `a` only if `a` is currently nullish." },
+    { term: "Default value", definition: "A fallback used when no real value was provided." },
+  ],
+  sections: [
+    {
+      id: "explanation",
+      title: "How ?? works",
+      blocks: [
+        {
+          kind: "paragraph",
+          text: "`left ?? right` evaluates `left`. If it is `null` or `undefined`, the result is `right`. Otherwise the result is `left`, and `right` is **not evaluated at all** (short-circuiting, just like `||` and `&&`).",
+        },
+        {
+          kind: "table",
+          caption: "?? vs || for the same left-hand value",
+          headers: ["value", "`value ?? \"default\"`", "`value || \"default\"`"],
+          rows: [
+            ["`null`", "`\"default\"`", "`\"default\"`"],
+            ["`undefined`", "`\"default\"`", "`\"default\"`"],
+            ["`0`", "`0`", "`\"default\"`"],
+            ["`\"\"`", "`\"\"`", "`\"default\"`"],
+            ["`false`", "`false`", "`\"default\"`"],
+            ["`NaN`", "`NaN`", "`\"default\"`"],
+            ["`\"Ada\"`", "`\"Ada\"`", "`\"Ada\"`"],
+          ],
+        },
+        {
+          kind: "callout",
+          tone: "tip",
+          title: "Rule of thumb",
+          text: "Use `??` when you mean \"if no value was given\". Use `||` only when you really want to replace **every** falsy value, e.g. turning an empty search string into a placeholder.",
+        },
+      ],
+    },
+    {
+      id: "syntax",
+      title: "Syntax",
+      blocks: [
+        {
+          kind: "code",
+          language: "js",
+          code: "const result = value ?? fallback;\n\n// Chain several candidates: the first non-nullish wins\nconst name = user.nickname ?? user.fullName ?? \"Guest\";\n\n// Assign only if the property is null/undefined\nsettings.theme ??= \"light\";",
+        },
+        {
+          kind: "list",
+          items: [
+            "`a ?? b` — `a` if it is not `null`/`undefined`, otherwise `b`.",
+            "`a ??= b` — shorthand for `a ?? (a = b)`: assigns only when `a` is nullish.",
+            "`??` cannot be mixed directly with `||` or `&&` — you must add parentheses, otherwise it is a `SyntaxError`.",
+          ],
+        },
+        {
+          kind: "code",
+          language: "js",
+          title: "Mixing without parentheses is a SyntaxError",
+          code: "// SyntaxError: Unexpected token '||'\nconst x = a ?? b || c;\n\n// OK: parentheses make the intent explicit\nconst y = (a ?? b) || c;\nconst z = a ?? (b || c);",
+        },
+      ],
+    },
+    {
+      id: "examples",
+      title: "Examples",
+      blocks: [
+        { kind: "heading", text: "Keeping valid falsy values" },
+        {
+          kind: "code",
+          language: "js",
+          code: "const settings = { volume: 0, nickname: \"\", notifications: false };\n\nconsole.log(settings.volume ?? 50);\nconsole.log(settings.volume || 50);\nconsole.log(settings.notifications ?? true);\nconsole.log(settings.notifications || true);",
+          output: "0\n50\nfalse\ntrue",
+          runnable: true,
+        },
+        { kind: "heading", text: "Falling back for missing values" },
+        {
+          kind: "code",
+          language: "js",
+          code: "const product = { name: \"Desk Lamp\", discount: null };\n\nconsole.log(product.discount ?? 0);\nconsole.log(product.rating ?? \"No reviews yet\");",
+          output: "0\nNo reviews yet",
+          runnable: true,
+        },
+        { kind: "heading", text: "Choosing the first defined value" },
+        {
+          kind: "code",
+          language: "js",
+          code: "const user = { nickname: undefined, fullName: \"Ada Lovelace\" };\n\nconst displayName = user.nickname ?? user.fullName ?? \"Guest\";\nconsole.log(displayName);",
+          output: "Ada Lovelace",
+          runnable: true,
+        },
+        { kind: "heading", text: "Filling in defaults with ??=" },
+        {
+          kind: "code",
+          language: "js",
+          code: "const options = { pageSize: 0, sort: null };\n\noptions.pageSize ??= 20;\noptions.sort ??= \"price\";\noptions.currency ??= \"USD\";\n\nconsole.log(options);",
+          output: "{ pageSize: 0, sort: 'price', currency: 'USD' }",
+          runnable: true,
+        },
+      ],
+    },
+    {
+      id: "walkthrough",
+      title: "Code walkthrough",
+      blocks: [
+        {
+          kind: "code",
+          language: "js",
+          code: "function buildSearchRequest(params) {\n  return {\n    query: params.query ?? \"\",\n    page: params.page ?? 1,\n    minPrice: params.minPrice ?? 0,\n    inStockOnly: params.inStockOnly ?? false,\n  };\n}\n\nconsole.log(buildSearchRequest({ query: \"lamp\", minPrice: 0, inStockOnly: true }));",
+          output: "{ query: 'lamp', page: 1, minPrice: 0, inStockOnly: true }",
+          runnable: true,
+        },
+        {
+          kind: "list",
+          ordered: true,
+          items: [
+            "`params.query` is `\"lamp\"` — not nullish, so it is kept.",
+            "`params.page` is missing (`undefined`), so `?? 1` supplies the default page.",
+            "`params.minPrice` is `0`. With `||` it would also become `0` here by luck, but if the default were `10` a user asking for a minimum of 0 would be ignored. `??` keeps the `0` the user chose.",
+            "`params.inStockOnly` is `true` and kept. If the user had passed `false`, `??` would keep `false` too.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "real-world",
+      title: "Real-world applications",
+      blocks: [
+        {
+          kind: "list",
+          items: [
+            "**Function options:** `const timeout = options.timeout ?? 5000;` lets callers pass `0` to disable a timeout.",
+            "**API data:** `const stock = product.stock ?? \"Unknown\";` shows a placeholder only when the field is missing, not when stock is `0`.",
+            "**Config objects:** `config.retries ??= 3;` fills gaps without overwriting values someone set on purpose.",
+            "**Combined with optional chaining:** `order?.shipping?.cost ?? 0` reads a deeply nested value with a safe default.",
+            "**Test automation:** `const baseUrl = env.BASE_URL ?? \"http://localhost:3000\";` for a default test target.",
+          ],
+        },
+      ],
+    },
+  ],
+  commonMistakes: [
+    {
+      title: "Using || when 0, \"\" or false are valid",
+      wrong: "function setQuantity(qty) {\n  return qty || 1; // setQuantity(0) returns 1\n}",
+      right: "function setQuantity(qty) {\n  return qty ?? 1; // setQuantity(0) returns 0\n}",
+      explanation: "`||` replaces every falsy value. Use `??` when only a missing value should get the default.",
+    },
+    {
+      title: "Mixing ?? with || or && without parentheses",
+      wrong: "const label = customLabel ?? defaultLabel || \"Untitled\"; // SyntaxError",
+      right: "const label = (customLabel ?? defaultLabel) || \"Untitled\";",
+      explanation: "JavaScript refuses to guess the grouping and throws a `SyntaxError`. Add parentheses to say what you mean.",
+    },
+    {
+      title: "Expecting ?? to replace NaN or empty strings",
+      wrong: "const price = Number(input) ?? 0; // NaN stays NaN",
+      right: "const parsed = Number(input);\nconst price = Number.isNaN(parsed) ? 0 : parsed;",
+      explanation: "`??` only reacts to `null` and `undefined`. `NaN` and `\"\"` are kept as they are.",
+    },
+    {
+      title: "Using ??= on a variable declared with const",
+      wrong: "const limit = undefined;\nlimit ??= 10; // TypeError: Assignment to constant variable.",
+      right: "let limit = undefined;\nlimit ??= 10;",
+      explanation: "`??=` is an assignment, so the target must be assignable (a `let` variable or an object property).",
+    },
+  ],
+  debugging: [
+    "A valid `0`, `false` or `\"\"` replaced by a default? Search for `||` and switch to `??`.",
+    "A default not being applied? Log the value with `console.log(JSON.stringify(value))` — it might be `\"\"`, `NaN` or `\"null\"` (a string), which `??` does not replace.",
+    "`SyntaxError: Unexpected token '||'` (or `'&&'`) near `??` means you mixed the operators without parentheses.",
+    "If the right side of `??` has a side effect (like a function call) that never seems to run, remember it is skipped whenever the left side is not nullish.",
+  ],
+  examples: [
+    {
+      id: "operators-nullish-coalescing-example-compare",
+      title: "?? vs || side by side",
+      code: "const values = [null, undefined, 0, \"\", false, NaN, \"Ada\"];\n\nfor (const v of values) {\n  console.log(String(v).padEnd(10), \"| ??:\", v ?? \"default\", \"| ||:\", v || \"default\");\n}",
+    },
+    {
+      id: "operators-nullish-coalescing-example-options",
+      title: "Function options with defaults",
+      code: "function createToast(options) {\n  const message = options.message ?? \"Saved\";\n  const duration = options.duration ?? 3000;\n  const dismissible = options.dismissible ?? true;\n  return { message, duration, dismissible };\n}\n\nconsole.log(createToast({}));\nconsole.log(createToast({ duration: 0, dismissible: false }));",
+    },
+    {
+      id: "operators-nullish-coalescing-example-assign",
+      title: "Filling missing config with ??=",
+      code: "const config = { retries: 0, baseUrl: null };\n\nconfig.retries ??= 3;\nconfig.baseUrl ??= \"https://api.example.com\";\nconfig.timeout ??= 5000;\n\nconsole.log(config);",
+    },
+  ],
+  exercises: [
+    {
+      id: "operators-nullish-coalescing-ex-1",
+      type: "predict-output",
+      difficulty: "beginner",
+      prompt: "What does this code print?",
+      code: "console.log(null ?? \"a\");\nconsole.log(0 ?? \"b\");\nconsole.log(\"\" || \"c\");\nconsole.log(false ?? \"d\");",
+      answer: "a\n0\nc\nfalse",
+      hints: ["`??` only replaces `null` and `undefined`.", "`||` replaces any falsy value."],
+      explanation: "`null` is nullish → `\"a\"`. `0` is not nullish → `0`. `\"\"` is falsy so `||` gives `\"c\"`. `false` is not nullish → `false`.",
+    },
+    {
+      id: "operators-nullish-coalescing-ex-2",
+      type: "code",
+      difficulty: "beginner",
+      prompt: "Write `getVolume(settings)` that returns `settings.volume`, or `50` if it is `null` or `undefined`. A volume of `0` must be kept.",
+      starter: "function getVolume(settings) {\n  return settings.volume || 50;\n}\n",
+      tests: [
+        { name: "keeps 0", code: "assert.equal(getVolume({ volume: 0 }), 0);" },
+        { name: "keeps 80", code: "assert.equal(getVolume({ volume: 80 }), 80);" },
+        { name: "missing", code: "assert.equal(getVolume({}), 50);" },
+        { name: "null", code: "assert.equal(getVolume({ volume: null }), 50);" },
+      ],
+      solution: "function getVolume(settings) {\n  return settings.volume ?? 50;\n}",
+      hints: ["Which operator ignores falsy values and only reacts to nullish ones?"],
+      explanation: "`settings.volume ?? 50` keeps `0` and only uses 50 when the volume is missing.",
+    },
+    {
+      id: "operators-nullish-coalescing-ex-3",
+      type: "fill-blank",
+      difficulty: "beginner",
+      prompt: "Set `prefs.theme` to `\"dark\"` only if it is currently `null` or `undefined`.",
+      template: "prefs.theme ___ \"dark\";",
+      blanks: [{ answers: ["??="] }],
+      hints: ["There is an assignment version of `??`."],
+      explanation: "`prefs.theme ??= \"dark\"` assigns only when `prefs.theme` is nullish.",
+    },
+    {
+      id: "operators-nullish-coalescing-ex-4",
+      type: "code",
+      difficulty: "intermediate",
+      prompt: "Write `withDefaults(options)` that returns a **new** object with `pageSize` (default `20`), `sort` (default `\"relevance\"`) and `includeOutOfStock` (default `false`). Keep any non-nullish value the caller passed, including `0` and `false`.",
+      starter: "function withDefaults(options) {\n  return {\n    pageSize: options.pageSize || 20,\n    sort: options.sort || \"relevance\",\n    includeOutOfStock: options.includeOutOfStock || false,\n  };\n}\n",
+      tests: [
+        { name: "all defaults", code: "assert.deepEqual(withDefaults({}), { pageSize: 20, sort: \"relevance\", includeOutOfStock: false });" },
+        { name: "keeps pageSize 0", code: "assert.equal(withDefaults({ pageSize: 0 }).pageSize, 0);" },
+        { name: "keeps given values", code: "assert.deepEqual(withDefaults({ pageSize: 50, sort: \"price\", includeOutOfStock: true }), { pageSize: 50, sort: \"price\", includeOutOfStock: true });" },
+        { name: "null becomes default", code: "assert.equal(withDefaults({ sort: null }).sort, \"relevance\");" },
+        { name: "does not mutate", code: "const o = {};\nwithDefaults(o);\nassert.deepEqual(o, {});" },
+      ],
+      solution:
+        "function withDefaults(options) {\n  return {\n    pageSize: options.pageSize ?? 20,\n    sort: options.sort ?? \"relevance\",\n    includeOutOfStock: options.includeOutOfStock ?? false,\n  };\n}",
+      hints: ["Replace each `||` with the operator that keeps `0`."],
+      explanation: "With `||`, `pageSize: 0` became 20. `??` only fills in `null`/`undefined`, so deliberate values survive.",
+    },
+    {
+      id: "operators-nullish-coalescing-ex-5",
+      type: "find-bug",
+      difficulty: "intermediate",
+      debugging: true,
+      prompt: "`discountLabel(product)` should show `\"No discount\"` only when `product.discount` is missing. A discount of `0` should show `\"0% off\"`. Fix the bug.",
+      code: "function discountLabel(product) {\n  const discount = product.discount || \"none\";\n  return discount === \"none\" ? \"No discount\" : `${discount}% off`;\n}\n",
+      tests: [
+        { name: "zero discount", code: "assert.equal(discountLabel({ discount: 0 }), \"0% off\");" },
+        { name: "missing discount", code: "assert.equal(discountLabel({}), \"No discount\");" },
+        { name: "normal discount", code: "assert.equal(discountLabel({ discount: 15 }), \"15% off\");" },
+      ],
+      solution:
+        "function discountLabel(product) {\n  const discount = product.discount ?? \"none\";\n  return discount === \"none\" ? \"No discount\" : `${discount}% off`;\n}",
+      hints: ["What does `0 || \"none\"` evaluate to?"],
+      explanation: "`0 || \"none\"` is `\"none\"`, so a zero discount was treated as missing. `0 ?? \"none\"` keeps `0`.",
+    },
+    {
+      id: "operators-nullish-coalescing-ex-6",
+      type: "true-false",
+      difficulty: "beginner",
+      prompt: "`const x = a ?? b || c;` is valid JavaScript.",
+      answer: false,
+      hints: ["Can `??` be mixed with `||` without parentheses?"],
+      explanation: "It is a `SyntaxError`. You must write `(a ?? b) || c` or `a ?? (b || c)`.",
+    },
+  ],
+  quiz: [
+    {
+      id: "operators-nullish-coalescing-q1",
+      type: "mcq",
+      difficulty: "beginner",
+      prompt: "What is `0 ?? 10`?",
+      options: [
+        { id: "a", text: "`0`", explanation: "Correct — `0` is not `null` or `undefined`, so it is kept." },
+        { id: "b", text: "`10`", explanation: "That's what `0 || 10` returns. `??` doesn't replace falsy values, only nullish ones." },
+        { id: "c", text: "`undefined`", explanation: "`??` returns one of its operands." },
+      ],
+      answer: "a",
+      hints: ["Is `0` nullish?"],
+      explanation: "Only `null` and `undefined` trigger the fallback.",
+    },
+    {
+      id: "operators-nullish-coalescing-q2",
+      type: "mcq",
+      difficulty: "beginner",
+      prompt: "Which values make `value ?? \"x\"` return `\"x\"`?",
+      options: [
+        { id: "a", text: "Any falsy value", explanation: "That describes `||`." },
+        { id: "b", text: "Only `null` and `undefined`", explanation: "Correct — these are the nullish values." },
+        { id: "c", text: "`null`, `undefined` and `NaN`", explanation: "`NaN` is falsy but not nullish." },
+        { id: "d", text: "Only `undefined`", explanation: "`null` triggers the fallback too." },
+      ],
+      answer: "b",
+      hints: ["\"Nullish\" means null-ish."],
+      explanation: "`??` falls back only for `null` and `undefined`.",
+    },
+    {
+      id: "operators-nullish-coalescing-q3",
+      type: "mcq",
+      difficulty: "intermediate",
+      prompt: "After `const s = { a: 0, b: null }; s.a ??= 5; s.b ??= 5;`, what is `s`?",
+      options: [
+        { id: "a", text: "`{ a: 5, b: 5 }`", explanation: "`s.a` is `0`, which is not nullish, so it is not reassigned." },
+        { id: "b", text: "`{ a: 0, b: 5 }`", explanation: "Correct — only the `null` property is filled in." },
+        { id: "c", text: "`{ a: 0, b: null }`", explanation: "`s.b` is `null`, so `??=` does assign it." },
+      ],
+      answer: "b",
+      hints: ["`??=` assigns only when the current value is nullish."],
+      explanation: "`??=` leaves `0` alone and replaces `null`.",
+    },
+    {
+      id: "operators-nullish-coalescing-q4",
+      type: "mcq",
+      difficulty: "intermediate",
+      prompt: "Which line is valid JavaScript?",
+      options: [
+        { id: "a", text: "`a ?? b && c`", explanation: "Mixing `??` with `&&` without parentheses is a SyntaxError." },
+        { id: "b", text: "`a || b ?? c`", explanation: "Also a SyntaxError." },
+        { id: "c", text: "`(a || b) ?? c`", explanation: "Correct — the parentheses make the grouping explicit." },
+      ],
+      answer: "c",
+      hints: ["Parentheses are required when mixing."],
+      explanation: "JavaScript requires explicit parentheses when combining `??` with `||` or `&&`.",
+    },
+  ],
+  challenge: {
+    id: "operators-nullish-coalescing-challenge",
+    type: "code",
+    difficulty: "intermediate",
+    prompt:
+      "Write `formatProfile(user)` that returns `\"<name> (<city>) - <points> points\"`. `name` falls back to `user.username`, then to `\"Anonymous\"`. `city` falls back to `\"Unknown city\"`. `points` falls back to `0`. Only `null`/`undefined` should trigger fallbacks — an empty-string name must be kept as-is.",
+    starter: "function formatProfile(user) {\n  const name = user.name || user.username || \"Anonymous\";\n  const city = user.city || \"Unknown city\";\n  const points = user.points || 0;\n  return `${name} (${city}) - ${points} points`;\n}\n",
+    tests: [
+      {
+        name: "full profile",
+        code: "assert.equal(formatProfile({ name: \"Ada\", city: \"London\", points: 120 }), \"Ada (London) - 120 points\");",
+      },
+      {
+        name: "falls back to username",
+        code: "assert.equal(formatProfile({ username: \"ada99\", points: 0 }), \"ada99 (Unknown city) - 0 points\");",
+      },
+      {
+        name: "anonymous",
+        code: "assert.equal(formatProfile({ name: null }), \"Anonymous (Unknown city) - 0 points\");",
+      },
+      {
+        name: "keeps empty name",
+        code: "assert.equal(formatProfile({ name: \"\", username: \"x\", city: \"Paris\", points: 5 }), \" (Paris) - 5 points\");",
+      },
+    ],
+    solution:
+      "function formatProfile(user) {\n  const name = user.name ?? user.username ?? \"Anonymous\";\n  const city = user.city ?? \"Unknown city\";\n  const points = user.points ?? 0;\n  return `${name} (${city}) - ${points} points`;\n}",
+    hints: ["You can chain `??`: `a ?? b ?? c`.", "Which test does the `||` version fail?"],
+    explanation:
+      "Chaining `??` picks the first value that is not `null`/`undefined`. With `||`, an intentionally empty name would be replaced by the username.",
+  },
+  keyPoints: [
+    "`a ?? b` returns `b` only when `a` is `null` or `undefined` (nullish).",
+    "Unlike `||`, `??` keeps `0`, `\"\"`, `false` and `NaN`.",
+    "`a ??= b` assigns only when `a` is nullish — great for filling in defaults.",
+    "Mixing `??` with `||` or `&&` requires parentheses, otherwise it is a `SyntaxError`.",
+    "Combine with optional chaining for safe reads: `obj?.a?.b ?? fallback`.",
+  ],
+  related: ["operators-logical", "operators-short-circuit", "operators-optional-chaining", "operators-truthy-falsy", "modern-js-nullish-coalescing"],
+  references: [
+    { title: "MDN: Nullish coalescing operator (??)", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing" },
+    { title: "MDN: Nullish coalescing assignment (??=)", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Nullish_coalescing_assignment" },
+  ],
+};

@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+/* Dark mode is driven by data-theme on <html> (set before first paint by an inline script). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ------------------------------------------------------------------------
+ * Design tokens. Components use these semantic tokens only — never raw colors.
+ * ---------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+  --bg: #f7f8fa;
+  --bg-subtle: #eef0f4;
+  --surface: #ffffff;
+  --surface-2: #f9fafb;
+  --surface-hover: #f2f4f7;
+  --border: #e3e6eb;
+  --border-strong: #cdd2da;
+  --text: #16191f;
+  --text-muted: #4a5260;
+  --text-subtle: #6b7380;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-fg: #ffffff;
+  --primary-soft: #eef0ff;
+  --primary-soft-fg: #3730a3;
+  --success: #15803d;
+  --success-soft: #e9f7ee;
+  --warning: #b45309;
+  --warning-soft: #fdf4e3;
+  --danger: #c2261c;
+  --danger-soft: #fdeceb;
+  --info: #0e6aa8;
+  --info-soft: #e8f3fb;
+  --focus: #6366f1;
+  --code-bg: #f4f5f8;
+  --code-border: #e3e6eb;
+  --code-fg: #1f2430;
+  --syn-keyword: #8b2fc9;
+  --syn-string: #0b7a3e;
+  --syn-number: #b4530a;
+  --syn-comment: #6f7785;
+  --syn-fn: #1d5fc4;
+  --syn-prop: #a3265b;
+  --syn-punct: #4a5260;
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-md: 0 4px 12px rgb(16 24 40 / 0.08), 0 1px 3px rgb(16 24 40 / 0.06);
+  --shadow-lg: 0 16px 40px rgb(16 24 40 / 0.16);
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e1116;
+  --bg-subtle: #151922;
+  --surface: #141820;
+  --surface-2: #181d27;
+  --surface-hover: #1d2330;
+  --border: #262c38;
+  --border-strong: #353d4c;
+  --text: #e6e9ef;
+  --text-muted: #aab2bf;
+  --text-subtle: #8a93a2;
+  --primary: #8b8cf8;
+  --primary-hover: #a3a4fa;
+  --primary-fg: #0e1116;
+  --primary-soft: #23264a;
+  --primary-soft-fg: #c7c8ff;
+  --success: #4ade80;
+  --success-soft: #11291b;
+  --warning: #fbbf24;
+  --warning-soft: #2c2412;
+  --danger: #f87171;
+  --danger-soft: #2f1517;
+  --info: #5fb4ef;
+  --info-soft: #0f2534;
+  --focus: #a5a6fb;
+  --code-bg: #10141b;
+  --code-border: #252b36;
+  --code-fg: #dfe3ea;
+  --syn-keyword: #c792ea;
+  --syn-string: #a5d6a7;
+  --syn-number: #f7b267;
+  --syn-comment: #7d8696;
+  --syn-fn: #82aaff;
+  --syn-prop: #f78c9c;
+  --syn-punct: #aab2bf;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
+  --shadow-lg: 0 16px 40px rgb(0 0 0 / 0.6);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-subtle: var(--bg-subtle);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--text);
+  --color-muted: var(--text-muted);
+  --color-subtle: var(--text-subtle);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-fg: var(--primary-soft-fg);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-code: var(--code-bg);
+  --color-code-border: var(--code-border);
+  --color-code-fg: var(--code-fg);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 4.5rem;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible, consistent keyboard focus */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+code,
+pre,
+kbd {
+  font-family: var(--font-mono);
+}
+
+/* Inline code in prose */
+.prose-code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+  overflow-wrap: anywhere;
+}
+
+/* Syntax highlighting tokens */
+.tok-keyword { color: var(--syn-keyword); }
+.tok-string { color: var(--syn-string); }
+.tok-number { color: var(--syn-number); }
+.tok-comment { color: var(--syn-comment); font-style: italic; }
+.tok-fn { color: var(--syn-fn); }
+.tok-prop { color: var(--syn-prop); }
+.tok-punct { color: var(--syn-punct); }
+.tok-tag { color: var(--syn-fn); }
+.tok-attr { color: var(--syn-prop); }
+
+/* Scrollbars that respect theme */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+dialog::backdrop {
+  background: rgb(10 12 16 / 0.55);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* CodeMirror theme integration */
+.cm-editor {
+  font-size: var(--editor-font-size, 14px);
+  background: var(--code-bg);
+  color: var(--code-fg);
+}
+.cm-editor.cm-focused {
+  outline: none;
+}
+.cm-scroller {
+  font-family: var(--font-mono) !important;
+  line-height: 1.6 !important;
+}
+.cm-gutters {
+  background: var(--code-bg) !important;
+  color: var(--text-subtle) !important;
+  border-right: 1px solid var(--code-border) !important;
+}
+.cm-activeLine,
+.cm-activeLineGutter {
+  background: color-mix(in srgb, var(--primary) 7%, transparent) !important;
+}
+.cm-cursor {
+  border-left-color: var(--text) !important;
+}
+.cm-selectionBackground,
+.cm-focused .cm-selectionBackground {
+  background: color-mix(in srgb, var(--primary) 28%, transparent) !important;
+}
+.cm-line.cm-error-line {
+  background: var(--danger-soft);
+}

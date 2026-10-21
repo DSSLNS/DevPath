@@ -1,0 +1,420 @@
+import type { Lesson } from "@/content/types";
+
+export const whatIsDom: Lesson = {
+  id: "dom-what-is-dom",
+  slug: "what-is-dom",
+  title: "What the DOM Is",
+  summary: "Understand the Document Object Model: the live tree of objects the browser builds from your HTML, and the API JavaScript uses to read and change the page.",
+  difficulty: "beginner",
+  minutes: 20,
+  tech: ["javascript", "dom"],
+  tags: ["dom", "document", "nodes", "elements", "tree", "browser"],
+  objectives: [
+    "Explain what the DOM is and how the browser builds it from HTML.",
+    "Describe the DOM as a tree of nodes with parents, children and siblings.",
+    "Tell the difference between element nodes, text nodes and the `document` object.",
+    "Explain why the DOM is a browser API and not part of the JavaScript language itself.",
+  ],
+  prerequisites: ["introduction-html-css-js", "introduction-browser-console", "objects-object-literals"],
+  intro: [
+    {
+      kind: "paragraph",
+      text: "HTML is just text in a file. When a browser loads that file, it **parses** the text and builds a structure of JavaScript-accessible objects in memory. That structure is the **Document Object Model**, or **DOM**. Everything you see on a web page — headings, buttons, product cards, form fields — is represented by an object in the DOM.",
+    },
+    {
+      kind: "paragraph",
+      text: "JavaScript never edits your `.html` file. Instead, it reads and changes the DOM, and the browser re-draws the page to match. Adding an item to a cart, showing an error under a form field, or opening a menu are all DOM changes. Test tools like Cypress and Playwright also work by querying the DOM, so understanding it pays off far beyond writing UI code.",
+    },
+  ],
+  terms: [
+    { term: "DOM (Document Object Model)", definition: "A tree of objects the browser builds from HTML, plus the API for reading and changing it." },
+    { term: "Node", definition: "Any single item in the DOM tree: the document, an element, a piece of text, a comment." },
+    { term: "Element", definition: "A node created from an HTML tag, such as `<button>` or `<li>`. Elements can have attributes and children." },
+    { term: "Text node", definition: "A node that holds the text inside an element. `<p>Hi</p>` is an element node containing one text node `\"Hi\"`." },
+    { term: "`document`", definition: "The global object that represents the whole page and is the entry point to the DOM." },
+    { term: "Parsing", definition: "Reading HTML text and turning it into the DOM tree." },
+    { term: "Web API", definition: "A feature provided by the browser (not the JavaScript language) that JavaScript can call, such as the DOM, `fetch` or `localStorage`." },
+  ],
+  sections: [
+    {
+      id: "explanation",
+      title: "From HTML text to a tree of objects",
+      blocks: [
+        {
+          kind: "paragraph",
+          text: "The browser reads HTML from top to bottom. Every tag becomes an **element node**, every run of text becomes a **text node**, and nesting in the HTML becomes parent/child relationships in the tree.",
+        },
+        {
+          kind: "code",
+          language: "html",
+          title: "index.html",
+          code: "<body>\n  <h1>Shop</h1>\n  <ul id=\"products\">\n    <li>Desk Lamp</li>\n    <li>Office Chair</li>\n  </ul>\n</body>",
+        },
+        {
+          kind: "diagram",
+          title: "The DOM tree built from that HTML",
+          variant: "stack",
+          steps: [
+            { label: "document", detail: "The root object for the whole page" },
+            { label: "└─ html", detail: "The <html> element (document.documentElement)" },
+            { label: "   └─ body", detail: "document.body" },
+            { label: "      ├─ h1 → \"Shop\"", detail: "Element node with one text-node child" },
+            { label: "      └─ ul#products", detail: "Parent of the two list items" },
+            { label: "         ├─ li → \"Desk Lamp\"", detail: "First child element of the ul" },
+            { label: "         └─ li → \"Office Chair\"", detail: "Next sibling of the first li" },
+          ],
+        },
+        {
+          kind: "paragraph",
+          text: "Family words describe the tree: the `ul` is the **parent** of each `li`; the two `li` elements are **children** of the `ul` and **siblings** of each other; the `body` is an **ancestor** of every `li`, and each `li` is a **descendant** of the `body`.",
+        },
+        {
+          kind: "callout",
+          tone: "info",
+          title: "The DOM is live",
+          text: "The DOM is not a copy you edit and then save. When you change a DOM object, the browser updates what is on screen. When the user types into an input, the DOM object for that input changes too.",
+        },
+        {
+          kind: "callout",
+          tone: "tip",
+          title: "DOM vs JavaScript",
+          text: "The DOM is a **Web API** provided by the browser. The JavaScript language (ECMAScript) has no idea what a button is. That is why `document` exists in the browser but not in Node.js, and why JS Academy runs DOM code in a separate sandbox.",
+        },
+      ],
+    },
+    {
+      id: "syntax",
+      title: "Exploring the tree from JavaScript",
+      blocks: [
+        {
+          kind: "paragraph",
+          text: "The global `document` object is your entry point. From there you can reach any node.",
+        },
+        {
+          kind: "code",
+          language: "js",
+          runtime: "dom",
+          code: "document.documentElement; // the <html> element\ndocument.body;            // the <body> element\ndocument.title;           // text of <title>\n\nconst list = document.getElementById(\"products\");\nlist.children;            // HTMLCollection of child elements\nlist.firstElementChild;   // first <li>\nlist.parentElement;       // <body>\nlist.childNodes;          // ALL child nodes, including whitespace text nodes",
+        },
+        {
+          kind: "table",
+          caption: "Common node types",
+          headers: ["Node", "`nodeType`", "`nodeName`", "Example"],
+          rows: [
+            ["Element", "`1`", "`\"LI\"` (uppercase tag)", "`<li>Desk Lamp</li>`"],
+            ["Text", "`3`", "`\"#text\"`", "`\"Desk Lamp\"`"],
+            ["Comment", "`8`", "`\"#comment\"`", "`<!-- note -->`"],
+            ["Document", "`9`", "`\"#document\"`", "`document`"],
+          ],
+        },
+      ],
+    },
+    {
+      id: "examples",
+      title: "Examples",
+      blocks: [
+        { kind: "heading", text: "Walking from parent to children" },
+        {
+          kind: "code",
+          language: "js",
+          runtime: "dom",
+          runnable: true,
+          code: "const list = document.getElementById(\"products\");\n\nconsole.log(list.children.length); // 2 — elements only\nconsole.log(list.childNodes.length); // 5 — includes whitespace text nodes\n\nfor (const item of list.children) {\n  console.log(item.nodeName, item.textContent);\n}",
+        },
+        {
+          kind: "paragraph",
+          text: "`children` contains only elements, while `childNodes` also contains the text nodes created by the line breaks and spaces between tags. Most of the time you want `children`.",
+        },
+        { kind: "heading", text: "Thinking in data: a DOM tree as plain objects" },
+        {
+          kind: "paragraph",
+          text: "A tree is just objects that contain other objects. This plain-JavaScript model of the product list helps you reason about the real DOM:",
+        },
+        {
+          kind: "code",
+          language: "js",
+          code: "const tree = {\n  tag: \"ul\",\n  children: [\n    { tag: \"li\", text: \"Desk Lamp\", children: [] },\n    { tag: \"li\", text: \"Office Chair\", children: [] },\n  ],\n};\n\nconsole.log(tree.children.length);\nconsole.log(tree.children.map((c) => c.text));",
+          output: "2\n[ 'Desk Lamp', 'Office Chair' ]",
+          runnable: true,
+        },
+      ],
+    },
+    {
+      id: "walkthrough",
+      title: "Code walkthrough",
+      blocks: [
+        {
+          kind: "code",
+          language: "js",
+          runtime: "dom",
+          code: "const heading = document.querySelector(\"h1\");\nconsole.log(heading.nodeType);       // 1 (element)\nconsole.log(heading.textContent);    // \"Shop\"\nheading.textContent = \"Our Shop\";    // the page updates immediately\nconsole.log(heading.parentElement.nodeName); // \"BODY\"",
+        },
+        {
+          kind: "list",
+          ordered: true,
+          items: [
+            "`document.querySelector(\"h1\")` finds the first `<h1>` element object in the tree.",
+            "`nodeType` is `1`, the code for an element node.",
+            "`textContent` reads the text inside the element (its text-node descendants).",
+            "Assigning `textContent` changes the DOM object, and the browser redraws the heading — no file is touched.",
+            "`parentElement` moves one level up the tree to the `<body>`.",
+          ],
+        },
+      ],
+    },
+    {
+      id: "real-world",
+      title: "Real-world applications",
+      blocks: [
+        {
+          kind: "list",
+          items: [
+            "**E-commerce UI:** updating a cart badge, rendering search results and showing stock messages are all DOM operations.",
+            "**Test automation:** `cy.get(\"[data-testid=cart-count]\")` and `page.locator(\"button\")` query the same DOM tree you see in DevTools.",
+            "**Frameworks:** React, Vue and Svelte all end up creating and updating DOM nodes for you; knowing the DOM helps you debug them.",
+            "**Accessibility:** screen readers use the accessibility tree, which the browser derives from the DOM — semantic HTML gives a better tree.",
+          ],
+        },
+        {
+          kind: "table",
+          caption: "HTML source vs the DOM",
+          headers: ["", "HTML source", "DOM"],
+          rows: [
+            ["What it is", "Text in a file or network response", "Objects in browser memory"],
+            ["Changed by JS?", "No", "Yes"],
+            ["Seen in", "View Source", "DevTools Elements panel"],
+            ["Fixes errors?", "No", "Yes — the parser repairs invalid HTML (e.g. adds a missing `<tbody>`)"],
+          ],
+        },
+      ],
+    },
+  ],
+  commonMistakes: [
+    {
+      title: "Thinking JavaScript edits the HTML file",
+      wrong: "// Expecting index.html on disk to change\ndocument.querySelector(\"h1\").textContent = \"Sale!\";",
+      right: "// The DOM changes in memory; refresh the page and it is gone.\n// Persist data on a server or in storage if it must survive reloads.\ndocument.querySelector(\"h1\").textContent = \"Sale!\";",
+      explanation: "DOM changes live only in the current page's memory. Reloading the page rebuilds the DOM from the original HTML.",
+    },
+    {
+      title: "Running DOM code before the element exists",
+      wrong: "<head>\n  <script src=\"app.js\"></script> <!-- runs before <body> is parsed -->\n</head>",
+      right: "<head>\n  <script src=\"app.js\" defer></script> <!-- runs after parsing -->\n</head>",
+      explanation: "A classic script in `<head>` runs before the body is parsed, so `getElementById` returns `null`. Use `defer` (or `type=\"module\"`, which defers automatically), or place the script at the end of `<body>`.",
+    },
+    {
+      title: "Confusing `childNodes` with `children`",
+      wrong: "const first = list.childNodes[0];\nfirst.classList.add(\"active\"); // TypeError: first is a whitespace text node",
+      right: "const first = list.children[0]; // or list.firstElementChild\nfirst.classList.add(\"active\");",
+      explanation: "`childNodes` includes text and comment nodes. `children` and `firstElementChild` skip to element nodes only.",
+    },
+  ],
+  debugging: [
+    "Open DevTools → **Elements** to see the live DOM. Compare it with **View Source** to see what the parser or your scripts changed.",
+    "In the Console, select an element in the Elements panel and type `$0` to get its DOM object.",
+    "`Cannot read properties of null` right after a query usually means the element did not exist yet or your selector is wrong — log the query result.",
+    "Log `node.nodeType` / `node.nodeName` when you are not sure what kind of node you are holding.",
+  ],
+  examples: [
+    {
+      id: "dom-what-is-dom-example-tree",
+      title: "Explore the product list tree",
+      runtime: "dom",
+      html: "<h1>Shop</h1>\n<ul id=\"products\">\n  <li>Desk Lamp</li>\n  <li>Office Chair</li>\n</ul>",
+      code: "const list = document.getElementById(\"products\");\n\nconsole.log(\"parent:\", list.parentElement.nodeName);\nconsole.log(\"children:\", list.children.length);\nconsole.log(\"childNodes:\", list.childNodes.length);\n\nfor (const item of list.children) {\n  console.log(item.nodeName, \"→\", item.textContent);\n}",
+    },
+    {
+      id: "dom-what-is-dom-example-live",
+      title: "The DOM is live",
+      runtime: "dom",
+      html: "<h1>Shop</h1>\n<p id=\"status\">Loading products…</p>",
+      code: "const heading = document.querySelector(\"h1\");\nconst status = document.getElementById(\"status\");\n\nheading.textContent = \"Our Shop\";\nstatus.textContent = \"2 products available\";\n\nconsole.log(document.body.textContent.trim().replace(/\\s+/g, \" \"));",
+    },
+    {
+      id: "dom-what-is-dom-example-node-types",
+      title: "Element vs text nodes",
+      runtime: "dom",
+      html: "<p id=\"msg\">Hello <strong>shopper</strong>!<!-- greeting --></p>",
+      code: "const p = document.getElementById(\"msg\");\n\nfor (const node of p.childNodes) {\n  console.log(node.nodeType, node.nodeName, JSON.stringify(node.textContent));\n}",
+    },
+  ],
+  exercises: [
+    {
+      id: "dom-what-is-dom-ex-1",
+      type: "mcq",
+      difficulty: "beginner",
+      prompt: "When JavaScript sets `heading.textContent = \"Sale\"`, what changes?",
+      options: [
+        { id: "a", text: "The `.html` file on the server", explanation: "JavaScript in the page cannot rewrite the source file." },
+        { id: "b", text: "The DOM object in memory, and the screen updates to match", explanation: "Correct — the DOM is a live, in-memory model of the page." },
+        { id: "c", text: "Nothing until you call `document.save()`", explanation: "There is no save step; DOM changes take effect immediately." },
+      ],
+      answer: "b",
+      hints: ["Where does the DOM live?"],
+      explanation: "The DOM lives in browser memory. Changing it updates the rendered page, but reloading rebuilds it from the original HTML.",
+    },
+    {
+      id: "dom-what-is-dom-ex-2",
+      type: "match",
+      difficulty: "beginner",
+      prompt: "Match each DOM term to its description.",
+      pairs: [
+        { left: "`document`", right: "Entry point object for the whole page" },
+        { left: "Element node", right: "Created from an HTML tag like `<li>`" },
+        { left: "Text node", right: "Holds the characters inside an element" },
+        { left: "Parent", right: "The node directly containing another node" },
+      ],
+      hints: ["Think about the tree diagram for the product list."],
+      explanation: "`document` is the root, elements come from tags, text nodes hold text, and a parent directly contains its children.",
+    },
+    {
+      id: "dom-what-is-dom-ex-3",
+      type: "code",
+      difficulty: "beginner",
+      prompt: "A DOM-like tree is given as plain objects `{ tag, children }`. Write `countNodes(node)` that returns how many nodes the tree contains (including the root).",
+      instructions: "Use recursion or a loop over `children`. Every node has a `children` array (possibly empty).",
+      starter: "function countNodes(node) {\n  // your code here\n}\n",
+      tests: [
+        { name: "single node", code: "assert.equal(countNodes({ tag: \"p\", children: [] }), 1);" },
+        {
+          name: "list with two items",
+          code: "assert.equal(countNodes({ tag: \"ul\", children: [{ tag: \"li\", children: [] }, { tag: \"li\", children: [] }] }), 3);",
+        },
+        {
+          name: "deeper tree",
+          code: "const tree = { tag: \"body\", children: [{ tag: \"h1\", children: [] }, { tag: \"ul\", children: [{ tag: \"li\", children: [{ tag: \"a\", children: [] }] }] }] };\nassert.equal(countNodes(tree), 5);",
+        },
+      ],
+      solution: "function countNodes(node) {\n  let total = 1;\n  for (const child of node.children) {\n    total += countNodes(child);\n  }\n  return total;\n}",
+      hints: ["Count the node itself as 1.", "Add the count of each child's subtree."],
+      explanation: "Each node counts as one, plus everything below it. Recursion mirrors the tree shape: the browser's own tree-walking APIs work the same way.",
+    },
+    {
+      id: "dom-what-is-dom-ex-4",
+      type: "code",
+      difficulty: "intermediate",
+      prompt: "Write `findPath(node, tag)` that returns an array of tag names from the root down to the **first** node with the given tag (depth-first), or `null` if none exists.",
+      instructions: "For `body > ul > li`, `findPath(body, \"li\")` returns `[\"body\", \"ul\", \"li\"]`.",
+      starter: "function findPath(node, tag) {\n  // your code here\n}\n",
+      tests: [
+        {
+          name: "finds nested li",
+          code: "const t = { tag: \"body\", children: [{ tag: \"h1\", children: [] }, { tag: \"ul\", children: [{ tag: \"li\", children: [] }] }] };\nassert.deepEqual(findPath(t, \"li\"), [\"body\", \"ul\", \"li\"]);",
+        },
+        { name: "root matches", code: "assert.deepEqual(findPath({ tag: \"p\", children: [] }, \"p\"), [\"p\"]);" },
+        { name: "not found", code: "assert.equal(findPath({ tag: \"div\", children: [] }, \"span\"), null);" },
+      ],
+      solution:
+        "function findPath(node, tag) {\n  if (node.tag === tag) return [node.tag];\n  for (const child of node.children) {\n    const path = findPath(child, tag);\n    if (path) return [node.tag, ...path];\n  }\n  return null;\n}",
+      hints: ["If the current node matches, the path is just `[node.tag]`.", "Otherwise try each child; if a child returns a path, prepend the current tag."],
+      explanation: "This is the same ancestor chain DevTools shows in its breadcrumb bar (`body > ul > li`). Each recursive call either finds the tag or returns `null`.",
+    },
+    {
+      id: "dom-what-is-dom-ex-5",
+      type: "find-bug",
+      difficulty: "beginner",
+      debugging: true,
+      prompt: "`elementChildren(node)` should return only element children (nodes with `nodeType === 1`), mimicking `node.children`. It returns text nodes too. Fix it.",
+      code: "function elementChildren(node) {\n  return node.childNodes.filter((child) => child.nodeType = 1);\n}\n",
+      tests: [
+        {
+          name: "skips text nodes",
+          code: "const ul = { childNodes: [{ nodeType: 3 }, { nodeType: 1, name: \"a\" }, { nodeType: 3 }, { nodeType: 1, name: \"b\" }] };\nassert.deepEqual(elementChildren(ul).map((n) => n.name), [\"a\", \"b\"]);",
+        },
+        { name: "empty", code: "assert.deepEqual(elementChildren({ childNodes: [{ nodeType: 3 }] }), []);" },
+      ],
+      solution: "function elementChildren(node) {\n  return node.childNodes.filter((child) => child.nodeType === 1);\n}",
+      hints: ["Look closely at the comparison inside `filter`.", "`=` assigns, `===` compares."],
+      explanation: "`child.nodeType = 1` assigns `1` and evaluates to `1` (truthy), so every node passes the filter. Use `===` to compare.",
+    },
+  ],
+  quiz: [
+    {
+      id: "dom-what-is-dom-q1",
+      type: "mcq",
+      difficulty: "beginner",
+      prompt: "What is the DOM?",
+      options: [
+        { id: "a", text: "A JavaScript library you install with npm", explanation: "The DOM is built into every browser; nothing to install." },
+        { id: "b", text: "The browser's tree of objects representing the page, with an API to read and change it", explanation: "Correct." },
+        { id: "c", text: "Another name for the HTML file", explanation: "HTML is the source text; the DOM is what the browser builds from it." },
+        { id: "d", text: "A CSS feature for layout", explanation: "CSS styles DOM elements but the DOM is not a CSS feature." },
+      ],
+      answer: "b",
+      hints: ["Object Model."],
+      explanation: "The Document Object Model is an in-memory tree of nodes plus the methods and properties used to work with it.",
+    },
+    {
+      id: "dom-what-is-dom-q2",
+      type: "mcq",
+      difficulty: "beginner",
+      prompt: "For `<ul><li>A</li><li>B</li></ul>`, how are the two `li` elements related?",
+      options: [
+        { id: "a", text: "Parent and child", explanation: "They are at the same level; the `ul` is their parent." },
+        { id: "b", text: "Siblings", explanation: "Correct — they share the same parent." },
+        { id: "c", text: "Ancestor and descendant", explanation: "Neither contains the other." },
+      ],
+      answer: "b",
+      hints: ["Do they share a parent?"],
+      explanation: "Nodes with the same parent are siblings. You can move between them with `nextElementSibling` / `previousElementSibling`.",
+    },
+    {
+      id: "dom-what-is-dom-q3",
+      type: "mcq",
+      difficulty: "intermediate",
+      prompt: "Why does `document` exist in a browser but throw `ReferenceError: document is not defined` in Node.js?",
+      options: [
+        { id: "a", text: "Node.js uses an older JavaScript version", explanation: "Node supports modern JavaScript; version is not the reason." },
+        { id: "b", text: "The DOM is a Web API supplied by the browser, not part of the JavaScript language", explanation: "Correct — Node provides different APIs (file system, processes) instead." },
+        { id: "c", text: "You must `import document from \"dom\"` first", explanation: "There is no built-in `dom` module in Node." },
+      ],
+      answer: "b",
+      hints: ["Who provides `document`: the language or the environment?"],
+      explanation: "ECMAScript defines the language. Environments add APIs: browsers add the DOM, Node adds `fs` and `process`. Tools like jsdom emulate the DOM in Node for testing.",
+    },
+    {
+      id: "dom-what-is-dom-q4",
+      type: "true-false",
+      difficulty: "beginner",
+      prompt: "`element.childNodes` can include text nodes created by whitespace between tags.",
+      answer: true,
+      hints: ["Line breaks between tags are text too."],
+      explanation: "Whitespace between tags becomes text nodes. `children` skips them and returns elements only.",
+    },
+  ],
+  challenge: {
+    id: "dom-what-is-dom-challenge",
+    type: "code",
+    difficulty: "intermediate",
+    prompt:
+      "Write `renderOutline(node, depth = 0)` that returns an array of strings describing a `{ tag, children }` tree, one line per node, indented by two spaces per level. Example: `[\"ul\", \"  li\", \"  li\"]`.",
+    starter: "function renderOutline(node, depth = 0) {\n  // your code here\n}\n",
+    tests: [
+      { name: "single node", code: "assert.deepEqual(renderOutline({ tag: \"p\", children: [] }), [\"p\"]);" },
+      {
+        name: "list",
+        code: "assert.deepEqual(renderOutline({ tag: \"ul\", children: [{ tag: \"li\", children: [] }, { tag: \"li\", children: [] }] }), [\"ul\", \"  li\", \"  li\"]);",
+      },
+      {
+        name: "nested",
+        code: "const t = { tag: \"body\", children: [{ tag: \"ul\", children: [{ tag: \"li\", children: [] }] }, { tag: \"footer\", children: [] }] };\nassert.deepEqual(renderOutline(t), [\"body\", \"  ul\", \"    li\", \"  footer\"]);",
+      },
+    ],
+    solution:
+      "function renderOutline(node, depth = 0) {\n  const lines = [\"  \".repeat(depth) + node.tag];\n  for (const child of node.children) {\n    lines.push(...renderOutline(child, depth + 1));\n  }\n  return lines;\n}",
+    hints: ["`\"  \".repeat(depth)` builds the indentation.", "Recurse with `depth + 1` and spread the child lines into your result."],
+    explanation: "This is a depth-first walk of the tree — the same order the DevTools Elements panel shows nodes in.",
+  },
+  keyPoints: [
+    "The **DOM** is the browser's live, in-memory tree of objects built by parsing HTML.",
+    "Every tag becomes an **element node**; text becomes **text nodes**; nesting becomes parent/child relationships.",
+    "`document` is the entry point; `children` gives element children, `childNodes` gives all nodes.",
+    "The DOM is a **Web API** provided by the browser, not part of the JavaScript language — changing it never edits the HTML file.",
+  ],
+  related: ["dom-selecting-elements", "dom-updating-content", "dom-devtools", "introduction-how-websites-work"],
+  references: [
+    { title: "MDN: Introduction to the DOM", url: "https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model/Introduction" },
+    { title: "MDN: Node", url: "https://developer.mozilla.org/en-US/docs/Web/API/Node" },
+    { title: "MDN: Document", url: "https://developer.mozilla.org/en-US/docs/Web/API/Document" },
+  ],
+};
