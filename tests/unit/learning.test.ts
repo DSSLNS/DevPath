@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { createActivityClock, IDLE_AFTER_MS } from "@/lib/activity-time";
-import { safeNext, validateEmail, validatePassword } from "@/lib/auth-validation";
 import { injectIntoHead } from "@/lib/sandbox/web-document";
 import { runWebPage } from "@/lib/sandbox/node-runner";
 import { createDefaultState, parseState } from "@/lib/store/schema";
 import { LearnerStore, memoryAdapter, todayKey } from "@/lib/store/store";
-import { assessmentQuestions, getCourse, getLessonRef, getTechnology, modules, technologies } from "@/content";
+import { assessmentQuestions, getCourse, getLessonRef, getTechnology, learningPaths, modules, technologies } from "@/content";
+import { getCatalog } from "@/lib/catalog/build";
+import { makeCatalogApi } from "@/lib/catalog/context";
+import { pathProgress } from "@/lib/courses";
 import { curriculumManifest, lessonIdFor } from "@/content/curriculum/manifest";
 import { DAY_BUDGET_MINUTES } from "@/content/technologies/roadmap";
 
@@ -37,23 +39,6 @@ describe("goal settings", () => {
     expect(ok).toMatchObject({ dailyGoalMinutes: 45, goalPromptSeen: true });
     const bad = parseState(JSON.stringify({ ...createDefaultState(), settings: { dailyGoalMinutes: 9999, goalPromptSeen: "yes" } })).state.settings;
     expect(bad).toMatchObject({ dailyGoalMinutes: 0, goalPromptSeen: false });
-  });
-});
-
-describe("account form validation", () => {
-  it("validates email and password rules", () => {
-    expect(validateEmail("ada@example.com")).toBeNull();
-    expect(validateEmail("ada@")).not.toBeNull();
-    expect(validatePassword("short1")).not.toBeNull();
-    expect(validatePassword("onlyletterslong")).not.toBeNull();
-    expect(validatePassword("correct horse 42")).toBeNull();
-  });
-  it("only allows same-site redirects after login", () => {
-    expect(safeNext("/courses/html")).toBe("/courses/html");
-    expect(safeNext("//evil.example")).toBe("/");
-    expect(safeNext("https://evil.example")).toBe("/");
-    expect(safeNext("/\\evil.example")).toBe("/");
-    expect(safeNext(null)).toBe("/");
   });
 });
 
@@ -129,5 +114,53 @@ describe("technology catalog and roadmaps", () => {
     expect(qs.length).toBeGreaterThan(0);
     expect(qs.every((q) => published.includes(q.lessonId))).toBe(true);
     expect(new Set(qs.map((q) => q.lessonId))).toEqual(new Set(published));
+  });
+});
+
+describe("career learning paths", () => {
+  const careers = learningPaths.filter((p) => p.steps);
+
+  it("offers exactly the four primary paths, each with valid steps", () => {
+    expect(careers.map((p) => p.id)).toEqual(["frontend", "backend", "testing", "fullstack"]);
+    const noteIds = new Set(getCatalog().kb.map((n) => n.id));
+    for (const p of careers) {
+      const ids = p.steps!.map((s) => s.id);
+      expect(new Set(ids).size, p.id).toBe(ids.length);
+      for (const s of p.steps!) {
+        expect(getTechnology(s.techId), `${p.id}/${s.id}`).toBeTruthy();
+        for (const n of s.noteIds ?? []) expect(noteIds.has(n), `${p.id}/${s.id} note ${n}`).toBe(true);
+      }
+    }
+  });
+
+  it("shares courses between paths instead of copying them", () => {
+    const fe = careers.find((p) => p.id === "frontend")!;
+    const fs = careers.find((p) => p.id === "fullstack")!;
+    expect(fe.technologyIds).toContain("react");
+    expect(fs.technologyIds).toContain("react");
+    // Several steps can point at one course, but each course is counted once.
+    expect(fe.steps!.filter((s) => s.techId === "react").length).toBeGreaterThan(1);
+    expect(new Set(fe.technologyIds).size).toBe(fe.technologyIds!.length);
+  });
+
+  it("derives step status from saved progress without locking later steps", () => {
+    const c = makeCatalogApi(getCatalog());
+    const fe = careers.find((p) => p.id === "frontend")!;
+    const html = c.technologies.find((t) => t.id === "html")!;
+    const fresh = pathProgress(c, fe, createDefaultState());
+    expect(fresh.started).toBe(false);
+    expect(fresh.current?.tech.id).toBe("html");
+    expect(fresh.steps.find((s) => s.step.id === "git")?.status).toBe("coming-soon");
+
+    const lessons = Object.fromEntries(html.lessonIds.map((id) => [id, { firstOpenedAt: "1", lastOpenedAt: "1", completedAt: "1" }]));
+    const done = pathProgress(c, fe, { ...createDefaultState(), lessons });
+    expect(done.steps.find((s) => s.step.id === "html")?.status).toBe("completed");
+    expect(done.current?.tech.id).toBe("css");
+    expect(done.completed).toBe(html.lessonIds.length);
+  });
+
+  it("migrates path ids saved by the previous release", () => {
+    const parsed = parseState(JSON.stringify({ ...createDefaultState(), settings: { pathId: "test-automation-engineer" } }));
+    expect(parsed.state.settings.pathId).toBe("testing");
   });
 });

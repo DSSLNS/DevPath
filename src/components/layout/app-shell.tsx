@@ -6,22 +6,22 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   Award,
   BookMarked,
-  BookOpen,
   Check,
   ChevronRight,
   Code2,
   FlaskConical,
   FolderKanban,
   GraduationCap,
+  Layers,
   LayoutDashboard,
-  LogIn,
-  Route,
-  Library,
   ListChecks,
   Menu,
   Moon,
+  Monitor,
   NotebookPen,
+  Route,
   Search,
+  Server,
   Settings,
   Sun,
   TestTubes,
@@ -29,22 +29,21 @@ import {
 } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { useCatalog } from "@/lib/catalog/context";
-import { useAccount } from "@/lib/account";
-import { useSyncStatus } from "@/lib/store/server-adapter";
 import { learnerStore, useLearnerState, useStoreMeta } from "@/lib/store/hooks";
 import { cn } from "@/components/ui/cn";
-import { Button, buttonClass } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { SearchPalette } from "./search-palette";
 
 export const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/courses", label: "Learn", icon: GraduationCap },
+  { href: "/courses", label: "Explore Courses", icon: GraduationCap },
+  { href: "/paths/frontend", label: "Frontend Development", icon: Monitor },
+  { href: "/paths/backend", label: "Backend Development", icon: Server },
+  { href: "/paths/testing", label: "Testing & Automation", icon: TestTubes },
+  { href: "/paths/fullstack", label: "Full Stack Development", icon: Layers },
   { href: "/paths", label: "Learning Paths", icon: Route },
-  { href: "/learn", label: "JavaScript Curriculum", icon: BookOpen },
-  { href: "/concepts", label: "JavaScript Concepts", icon: Library },
   { href: "/practice", label: "Practice Lab", icon: FlaskConical },
   { href: "/quizzes", label: "Quizzes & Assessments", icon: ListChecks },
-  { href: "/e2e", label: "E2E Testing Notes", icon: TestTubes },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/bookmarks", label: "Bookmarks", icon: BookMarked },
   { href: "/notes", label: "My Notes", icon: NotebookPen },
@@ -55,7 +54,9 @@ export const NAV = [
 const noopSubscribe = () => () => {};
 
 function isActive(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(href + "/");
+  if (href === "/") return pathname === "/";
+  if (href === "/paths") return pathname === "/paths";
+  return pathname === href || pathname.startsWith(href + "/");
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -109,12 +110,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 }
 
 function Sidebar({ pathname }: { pathname: string }) {
-  const catalog = useCatalog();
-  // Lessons of other technologies also live under /learn; highlight "Learn" for them, not the JavaScript curriculum.
-  const moduleSlug = pathname.startsWith("/learn/") ? pathname.split("/")[2] : undefined;
-  const moduleId = catalog.modules.find((m) => m.slug === moduleSlug)?.id;
-  const techId = moduleId ? catalog.technologies.find((t) => t.moduleIds.includes(moduleId))?.id : undefined;
-  const otherTech = !!techId && techId !== "javascript";
+  // Lesson and course pages belong to "Explore Courses".
+  const inCourse = pathname.startsWith("/learn") || pathname.startsWith("/concepts") || pathname.startsWith("/e2e");
   return (
     <div className="flex h-full flex-col">
       <Link href="/" className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4 font-semibold tracking-tight">
@@ -126,7 +123,7 @@ function Sidebar({ pathname }: { pathname: string }) {
       <nav className="flex-1 overflow-y-auto px-2 py-3" aria-label="Main navigation">
         <ul className="space-y-0.5">
           {NAV.map(({ href, label, icon: Icon }) => {
-            const active = otherTech ? href === "/courses" || (href !== "/learn" && isActive(pathname, href)) : isActive(pathname, href);
+            const active = isActive(pathname, href) || (inCourse && href === "/courses");
             return (
               <li key={href}>
                 <Link
@@ -144,53 +141,56 @@ function Sidebar({ pathname }: { pathname: string }) {
             );
           })}
         </ul>
-        <CurriculumTree pathname={pathname} />
+        {pathname.startsWith("/learn/") && <CourseTree pathname={pathname} />}
       </nav>
     </div>
   );
 }
 
-function CurriculumTree({ pathname }: { pathname: string }) {
+/** Lesson navigation for the course being studied, shown only on lesson pages. */
+function CourseTree({ pathname }: { pathname: string }) {
   const catalog = useCatalog();
   const state = useLearnerState();
-  const current = pathname.startsWith("/learn/") ? pathname.split("/")[2] : null;
+  const current = pathname.split("/")[2];
+  const currentModule = catalog.modules.find((m) => m.slug === current);
+  const tech = currentModule ? catalog.technologies.find((t) => t.moduleIds.includes(currentModule.id)) : undefined;
+  const list = (tech?.moduleIds ?? (currentModule ? [currentModule.id] : [])).map((id) => catalog.moduleById.get(id)).filter((m) => !!m && m.lessons.length > 0);
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const path = catalog.paths.find((p) => p.id === state.settings.pathId) ?? catalog.paths[0];
-  const pathModules = path.moduleIds.map((id) => catalog.moduleById.get(id)).filter((m) => !!m);
-  // Lessons from outside the selected path still get their module listed while you're reading them.
-  const extra = catalog.modules.find((m) => m.slug === current && !path.moduleIds.includes(m.id));
-  const list = extra ? [...pathModules, extra] : pathModules;
+  if (!list.length) return null;
   return (
-    <div className="mt-5">
+    <div className="mt-5 border-t border-border pt-4">
       <h2 className="px-2.5 pb-1.5 text-[11px] font-semibold tracking-wider text-subtle uppercase">
-        <span className="sr-only">Curriculum for </span>
-        {path.title}
+        <span className="sr-only">Lessons in </span>
+        {tech ? (
+          <Link href={`/courses/${tech.id}`} className="hover:text-fg">
+            {tech.name} course
+          </Link>
+        ) : (
+          currentModule?.title
+        )}
       </h2>
-      {list.length === 0 && <p className="px-2.5 text-xs text-subtle">This path&apos;s lessons aren&apos;t published yet.</p>}
       <ul className="space-y-0.5">
-        {list.map((m, index) => {
-          const expanded = open[m.id] ?? m.slug === current;
-          const done = m.lessons.filter((l) => state.lessons[l.id]?.completedAt).length;
+        {list.map((m) => {
+          const expanded = open[m!.id] ?? m!.slug === current;
+          const done = m!.lessons.filter((l) => state.lessons[l.id]?.completedAt).length;
           return (
-            <li key={m.id}>
+            <li key={m!.id}>
               <button
                 type="button"
-                onClick={() => setOpen((o) => ({ ...o, [m.id]: !expanded }))}
+                onClick={() => setOpen((o) => ({ ...o, [m!.id]: !expanded }))}
                 aria-expanded={expanded}
                 className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[13px] text-muted hover:bg-surface-hover hover:text-fg"
               >
                 <ChevronRight className={cn("h-3.5 w-3.5 shrink-0 transition-transform", expanded && "rotate-90")} aria-hidden />
-                <span className="min-w-0 flex-1 truncate">
-                  {index + 1}. {m.title}
-                </span>
-                <span className="shrink-0 text-[11px] tabular-nums text-subtle" aria-label={`${done} of ${m.lessons.length} lessons complete`}>
-                  {done}/{m.lessons.length}
+                <span className="min-w-0 flex-1 truncate">{m!.title}</span>
+                <span className="shrink-0 text-[11px] tabular-nums text-subtle" aria-label={`${done} of ${m!.lessons.length} lessons complete`}>
+                  {done}/{m!.lessons.length}
                 </span>
               </button>
               {expanded && (
                 <ul className="mb-1 ml-4 border-l border-border pl-2">
-                  {m.lessons.map((l) => {
-                    const href = `/learn/${m.slug}/${l.slug}`;
+                  {m!.lessons.map((l) => {
+                    const href = `/learn/${m!.slug}/${l.slug}`;
                     const active = pathname === href;
                     const complete = !!state.lessons[l.id]?.completedAt;
                     return (
@@ -213,9 +213,7 @@ function CurriculumTree({ pathname }: { pathname: string }) {
                       </li>
                     );
                   })}
-                  {m.planned.length > 0 && (
-                    <li className="px-2 py-1 text-[11.5px] text-subtle">+ {m.planned.length} planned lessons</li>
-                  )}
+                  {m!.planned.length > 0 && <li className="px-2 py-1 text-[11.5px] text-subtle">+ {m!.planned.length} lessons coming soon</li>}
                 </ul>
               )}
             </li>
@@ -227,20 +225,7 @@ function CurriculumTree({ pathname }: { pathname: string }) {
 }
 
 function TopBar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void }) {
-  const state = useLearnerState();
   const meta = useStoreMeta();
-  const catalog = useCatalog();
-  const account = useAccount();
-  const sync = useSyncStatus();
-  const path = catalog.paths.find((p) => p.id === state.settings.pathId);
-  const saveLabel =
-    account.status === "signed-in"
-      ? { synced: "Saved to your account", saving: "Saving…", offline: "Offline: saving later", "signed-out": "Not saved", error: "Not saved" }[sync]
-      : meta.saveStatus === "saved"
-        ? "Saved in this browser"
-        : meta.saveStatus === "error"
-          ? "Not saved"
-          : "";
   const mac = useSyncExternalStore(
     noopSubscribe,
     () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent),
@@ -259,20 +244,17 @@ function TopBar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void
         className="flex h-9 min-w-0 flex-1 items-center gap-2 rounded-md border border-border bg-bg px-3 text-sm text-subtle hover:border-border-strong sm:max-w-md"
       >
         <Search className="h-4 w-4 shrink-0" aria-hidden />
-        <span className="truncate">Search lessons, notes, APIs…</span>
+        <span className="truncate">Search courses, lessons, notes, APIs…</span>
         <kbd className="ml-auto hidden shrink-0 rounded border border-border bg-surface px-1.5 text-[11px] text-subtle sm:inline" suppressHydrationWarning>
           {mac ? "⌘K" : "Ctrl K"}
         </kbd>
       </button>
       <div className="ml-auto flex items-center gap-1">
-        {path && (
-          <Link href="/paths" className="hidden max-w-[220px] truncate rounded px-2 py-1 text-xs text-muted hover:text-fg xl:block" title="Current learning path">
-            Path: {path.title}
-          </Link>
+        {meta.saveStatus === "error" && (
+          <span className="hidden text-xs text-danger md:inline" role="status">
+            Not saved
+          </span>
         )}
-        <span className="hidden text-xs text-subtle md:inline" aria-live="polite">
-          {saveLabel}
-        </span>
         <Button
           variant="ghost"
           size="icon"
@@ -291,27 +273,6 @@ function TopBar({ onMenu, onSearch }: { onMenu: () => void; onSearch: () => void
         <Link href="/settings" className="hidden h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-surface-hover hover:text-fg sm:inline-flex" aria-label="Settings">
           <Settings className="h-4 w-4" aria-hidden />
         </Link>
-        {account.status === "signed-in" ? (
-          <Link
-            href="/account"
-            className="grid h-8 w-8 place-items-center rounded-full bg-primary-soft text-xs font-semibold text-primary-soft-fg hover:ring-2 hover:ring-border-strong"
-            aria-label={`Account: ${account.user.name}`}
-            data-testid="account-menu"
-          >
-            {account.user.name.trim().charAt(0).toUpperCase() || "?"}
-          </Link>
-        ) : account.status === "guest" ? (
-          <>
-            <Link href="/login" className={cn(buttonClass("ghost", "sm"), "hidden sm:inline-flex")}>
-              <LogIn className="h-4 w-4" aria-hidden /> Log in
-            </Link>
-            <Link href="/signup" className={buttonClass("primary", "sm")}>
-              Sign up
-            </Link>
-          </>
-        ) : (
-          <span className="h-8 w-16" aria-hidden />
-        )}
       </div>
     </header>
   );

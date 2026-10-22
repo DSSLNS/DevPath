@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
-import { GoalPicker, goalLabel } from "@/components/account/account-dialogs";
+import { GoalPicker, goalLabel } from "@/components/goals/goal-picker";
 
 export function SettingsView() {
   const s = useLearnerState();
@@ -141,7 +141,7 @@ export function SettingsView() {
               const blob = new Blob([learnerStore.exportData()], { type: "application/json" });
               const a = document.createElement("a");
               a.href = URL.createObjectURL(blob);
-              a.download = `js-academy-backup-${new Date().toISOString().slice(0, 10)}.json`;
+              a.download = `devpath-backup-${new Date().toISOString().slice(0, 10)}.json`;
               a.click();
               URL.revokeObjectURL(a.href);
             }}
@@ -162,7 +162,7 @@ export function SettingsView() {
               if (!file) return;
               if (file.size > 5_000_000) return toast("That file is too large to be a DevPath backup.", "error");
               const result = learnerStore.importData(await file.text());
-              if (!result.ok) toast("That file isn't a valid JS Academy backup. Nothing was changed.", "error");
+              if (!result.ok) toast("That file isn't a valid DevPath backup. Nothing was changed.", "error");
               else toast(result.recovered ? "Imported. Some invalid entries were skipped." : "Backup imported.", "success");
             }}
           />

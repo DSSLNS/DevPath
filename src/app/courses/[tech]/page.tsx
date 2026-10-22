@@ -65,7 +65,7 @@ export default async function CoursePage({ params }: { params: Promise<{ tech: s
               </h2>
               <p className="mb-4 text-sm text-muted">
                 Each day takes roughly 30–60 minutes, including practice and a short assessment. Days are suggestions, not deadlines: go faster, slower or skip
-                around. Planned lessons are shown so you can see what&apos;s coming; they can&apos;t be opened yet.
+                around. Lessons marked “coming soon” are shown so you can see what&apos;s ahead; they can&apos;t be opened yet.
               </p>
               <div className="space-y-6">
                 {course.weeks.map((w) => (
@@ -127,7 +127,7 @@ export default async function CoursePage({ params }: { params: Promise<{ tech: s
           ) : (
             <section aria-labelledby="outline-h" className="rounded-lg border border-dashed border-border-strong bg-surface p-5">
               <h2 id="outline-h" className="font-semibold">
-                Planned curriculum
+                Coming soon: planned curriculum
               </h2>
               <p className="mt-1 text-sm text-muted">
                 Lessons for {tech.name} aren&apos;t published yet. We publish a technology once its lessons are fully written and checked, rather than shipping empty pages.
@@ -195,6 +195,10 @@ export default async function CoursePage({ params }: { params: Promise<{ tech: s
                 Prefer the module view?{" "}
                 <Link href="/learn" className="text-primary hover:underline">
                   Open the JavaScript curriculum
+                </Link>
+                . Every term defined across lessons is collected in{" "}
+                <Link href="/concepts" className="text-primary hover:underline">
+                  JavaScript Concepts
                 </Link>
                 .
               </p>

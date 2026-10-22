@@ -91,7 +91,7 @@ export function CourseCatalog({ compact = false, headingLevel = 2 }: { compact?:
         <label className="text-sm">
           <span className="mb-1 block text-xs text-muted">Availability</span>
           <select value={availability} onChange={(e) => setAvailability(e.target.value as Availability)} className={`${control} w-full`}>
-            <option value="all">Everything, including planned</option>
+            <option value="all">Everything, including coming soon</option>
             <option value="any-content">Lessons or notes available</option>
             <option value="lessons">Lessons available</option>
           </select>

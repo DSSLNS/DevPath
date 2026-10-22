@@ -1,5 +1,5 @@
 /** Server-side: flatten all bundled content into search documents. */
-import { allLessons, challenges, getLessonRef, glossary, kbCategories, kbNotes, lessonUrl, projects } from "@/content";
+import { allLessons, challenges, getLessonRef, glossary, kbCategories, kbNotes, learningPaths, lessonUrl, modules, projects, techCategories, technologies } from "@/content";
 import type { Block } from "@/content/types";
 import { stripInline } from "@/lib/markdown";
 import type { SearchDoc } from "./types";
@@ -33,6 +33,30 @@ const clip = (s: string) => s.replace(/\s+/g, " ").slice(0, MAX_TEXT);
 
 export function buildSearchIndex(): SearchDoc[] {
   const docs: SearchDoc[] = [];
+  for (const t of technologies) {
+    const published = t.moduleIds.reduce((n, id) => n + (modules.find((m) => m.id === id)?.lessons.length ?? 0), 0);
+    docs.push({
+      id: `course:${t.id}`,
+      category: "course",
+      title: t.name,
+      subtitle: `${techCategories.find((c) => c.id === t.category)?.title} · ${published ? `${published} lessons` : t.kbCategory ? "Reference notes" : "Coming soon"}`,
+      url: `/courses/${t.id}`,
+      tags: [t.badge, t.category],
+      text: clip([t.description, ...t.outline].join(" ")),
+      difficulty: t.level,
+    });
+  }
+  for (const p of learningPaths.filter((x) => x.steps)) {
+    docs.push({
+      id: `path:${p.id}`,
+      category: "path",
+      title: p.title,
+      subtitle: "Learning path",
+      url: `/paths/${p.id}`,
+      tags: [],
+      text: clip([p.description, ...(p.skills ?? []), ...(p.steps ?? []).map((s) => s.title)].join(" ")),
+    });
+  }
   for (const l of allLessons) {
     const ref = getLessonRef(l.id)!;
     const url = lessonUrl(l.id);

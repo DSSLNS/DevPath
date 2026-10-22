@@ -1,4 +1,4 @@
-export type SearchCategory = "lesson" | "concept" | "example" | "exercise" | "kb" | "challenge" | "project" | "glossary" | "note";
+export type SearchCategory = "course" | "path" | "lesson" | "concept" | "example" | "exercise" | "kb" | "challenge" | "project" | "glossary" | "note";
 
 export interface SearchDoc {
   id: string;
@@ -14,6 +14,8 @@ export interface SearchDoc {
 }
 
 export const CATEGORY_LABEL: Record<SearchCategory, string> = {
+  course: "Courses",
+  path: "Learning paths",
   lesson: "Lessons",
   concept: "Concepts",
   example: "Code examples",

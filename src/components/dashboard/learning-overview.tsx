@@ -1,19 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, CalendarClock, Clock, Flame, Target } from "lucide-react";
-import { useCatalog } from "@/lib/catalog/context";
-import { useAccount } from "@/lib/account";
-import { startedTechnologies, technologyForLesson } from "@/lib/courses";
+import { useState } from "react";
+import { CalendarClock, Clock, Flame, Target } from "lucide-react";
 import { currentStreak } from "@/lib/progress";
 import type { PersistedState } from "@/lib/store/schema";
 import { todayKey } from "@/lib/store/store";
-import { useLearnerState } from "@/lib/store/hooks";
+import { learnerStore, useLearnerState } from "@/lib/store/hooks";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ProgressBar } from "@/components/ui/progress";
-import { buttonClass } from "@/components/ui/button";
-import { TechMonogram } from "@/components/courses/tech-card";
-import { goalLabel } from "@/components/account/account-dialogs";
+import { Button } from "@/components/ui/button";
+import { GoalDialog, goalLabel } from "@/components/goals/goal-picker";
 
 export function formatMinutes(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -25,49 +22,17 @@ export function todaySeconds(s: PersistedState) {
   return s.timeLog[todayKey()] ?? 0;
 }
 
-export function WelcomeHeader() {
-  const account = useAccount();
-  const catalog = useCatalog();
+/** Today's plan: goal progress when a goal is set, otherwise an optional, dismissible suggestion. Never shames missed days. */
+export function TodayPlan() {
   const s = useLearnerState();
-  const focus = s.lastLessonId ? technologyForLesson(catalog, s.lastLessonId) : undefined;
-  const name = account.status === "signed-in" ? account.user.name.split(" ")[0] : null;
-  return (
-    <header className="mb-6">
-      <h1 className="text-2xl font-semibold tracking-tight">{name ? `Welcome back, ${name}` : "Welcome back"}</h1>
-      <p className="mt-1 text-sm text-muted">
-        {focus ? (
-          <>
-            Current focus: <strong className="text-fg">{focus.name}</strong>. Pick up where you left off, or choose something new below.
-          </>
-        ) : (
-          "Pick up where you left off and see what to study next."
-        )}
-        {account.status === "guest" && (
-          <>
-            {" "}
-            Progress is saved in this browser.{" "}
-            <Link href="/signup" className="text-primary hover:underline">
-              Create a free account
-            </Link>{" "}
-            to keep it on every device.
-          </>
-        )}
-      </p>
-    </header>
-  );
-}
-
-/** Today's plan: goal progress when a goal is set, otherwise a neutral nudge. Never shames missed days. */
-export function TodayPlan({ nextHref, nextTitle }: { nextHref?: string; nextTitle?: string }) {
-  const s = useLearnerState();
-  const account = useAccount();
+  const [goalOpen, setGoalOpen] = useState(false);
   const goal = s.settings.dailyGoalMinutes;
   const today = todaySeconds(s);
   const pct = goal ? Math.min(100, (today / 60 / goal) * 100) : 0;
   return (
     <Card className="p-5" data-testid="today-plan">
       <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-subtle uppercase">
-        <CalendarClock className="h-4 w-4" aria-hidden /> Today&apos;s learning plan
+        <CalendarClock className="h-4 w-4" aria-hidden /> Today&apos;s learning
       </div>
       {goal > 0 ? (
         <>
@@ -76,67 +41,30 @@ export function TodayPlan({ nextHref, nextTitle }: { nextHref?: string; nextTitl
           </p>
           <ProgressBar value={pct} label="Daily goal progress" tone={pct >= 100 ? "success" : "primary"} className="mt-2" />
           <p className="mt-2 text-xs text-muted">
-            {pct >= 100 ? "Goal reached for today. Anything more is a bonus." : "Only active time on lessons and practice counts."}
+            {pct >= 100 ? "Goal reached for today. Anything more is a bonus." : "Only active time on lessons and practice counts."}{" "}
+            <Link href="/settings" className="text-primary hover:underline">
+              Change goal
+            </Link>
           </p>
         </>
       ) : (
-        <p className="mt-2 text-sm text-muted">
-          Continue where you left off.{" "}
-          {account.status === "signed-in" ? (
-            <Link href="/account" className="text-primary hover:underline">
-              Set a daily goal
-            </Link>
-          ) : (
-            <Link href="/settings" className="text-primary hover:underline">
-              Set an optional daily goal
-            </Link>
-          )}{" "}
-          if a target helps you.
-        </p>
+        <>
+          <p className="mt-2 text-sm">
+            <strong className="tabular-nums">{today ? formatMinutes(today) : "No time"}</strong> of active learning today.
+          </p>
+          {!s.settings.goalPromptSeen && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <Button size="sm" onClick={() => setGoalOpen(true)} data-testid="set-goal">
+                <Target className="h-3.5 w-3.5" aria-hidden /> Set a daily goal
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => learnerStore.updateSettings({ goalPromptSeen: true })}>
+                No thanks
+              </Button>
+            </div>
+          )}
+        </>
       )}
-      {nextHref && nextTitle && (
-        <Link href={nextHref} className={`${buttonClass("secondary", "sm")} mt-3 max-w-full`}>
-          <span className="truncate">Next: {nextTitle}</span> <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
-        </Link>
-      )}
-    </Card>
-  );
-}
-
-export function MyLearningPaths() {
-  const catalog = useCatalog();
-  const s = useLearnerState();
-  const started = startedTechnologies(catalog, s);
-  return (
-    <Card>
-      <CardHeader title="My learning paths" description="Technologies you've started" action={<Link href="/courses" className="text-xs text-primary hover:underline">All technologies</Link>} />
-      {started.length ? (
-        <ul className="divide-y divide-border">
-          {started.map(({ tech, progress }) => (
-            <li key={tech.id} className="flex items-center gap-3 px-4 py-3">
-              <TechMonogram tech={tech} className="h-8 w-8 text-[10px]" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <Link href={`/courses/${tech.id}`} className="truncate text-sm font-medium hover:text-primary">
-                    {tech.name}
-                  </Link>
-                  <span className="shrink-0 text-xs text-subtle tabular-nums">
-                    {progress.completed}/{progress.total} lessons
-                  </span>
-                </div>
-                <ProgressBar value={progress.percent} label={`${tech.name} progress`} className="mt-1.5" />
-              </div>
-              {progress.nextLessonId && (
-                <Link href={catalog.lessonUrl(progress.nextLessonId)} className="shrink-0 text-xs text-primary hover:underline">
-                  Continue
-                </Link>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="px-4 py-4 text-sm text-muted">Open a lesson in any technology and it will appear here.</p>
-      )}
+      <GoalDialog open={goalOpen} onClose={() => setGoalOpen(false)} />
     </Card>
   );
 }

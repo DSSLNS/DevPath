@@ -411,13 +411,6 @@ export class LearnerStore {
     this.update((s) => ({ ...s, settings: { ...s.settings, ...patch } }), { track: false });
   }
 
-  /** Replaces the whole state (server merge or guest import) and persists it. */
-  replaceState(state: PersistedState) {
-    this.state = state;
-    this.persist();
-    this.emit();
-  }
-
   exportData() {
     return JSON.stringify(this.state, null, 2);
   }

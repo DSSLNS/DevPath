@@ -5,6 +5,7 @@
 import type { CatalogTechnology } from "@/lib/catalog/types";
 import type { CatalogApi } from "@/lib/catalog/context";
 import type { PersistedState } from "@/lib/store/schema";
+import type { LearningPath, PathStep } from "@/content/types";
 
 export interface TechProgress {
   completed: number;
@@ -45,4 +46,54 @@ export function technologyForLesson(c: CatalogApi, lessonId: string) {
 export function formatDuration(minutes: number) {
   const hours = minutes / 60;
   return hours < 1 ? `${minutes} min` : `${Math.round(hours)} h`;
+}
+
+export type StepStatus = "completed" | "current" | "upcoming" | "coming-soon";
+
+export interface PathProgress {
+  /** Published lessons completed across the path's unique courses. */
+  completed: number;
+  total: number;
+  percent: number;
+  started: boolean;
+  /** Per step, in path order. */
+  steps: { step: PathStep; tech: CatalogTechnology; status: StepStatus; progress: TechProgress }[];
+  /** First step that isn't finished and can be studied now. */
+  current?: { step: PathStep; tech: CatalogTechnology };
+}
+
+/**
+ * Progress through a career path. A step is "completed" when every published lesson of its
+ * course is complete; courses with nothing published yet are "coming soon" and never block
+ * later steps. Steps are advice, not locks: every available course can be opened at any time.
+ */
+export function pathProgress(c: CatalogApi, path: LearningPath, s: PersistedState): PathProgress {
+  const techs = new Map(c.technologies.map((t) => [t.id, t]));
+  const steps = (path.steps ?? []).flatMap((step) => {
+    const tech = techs.get(step.techId);
+    return tech ? [{ step, tech, progress: techProgress(tech, s) }] : [];
+  });
+  let currentFound = false;
+  const withStatus = steps.map((x) => {
+    let status: StepStatus;
+    if (x.tech.status === "planned") status = "coming-soon";
+    else if (x.tech.status === "available" && x.progress.total > 0 && x.progress.completed === x.progress.total) status = "completed";
+    else if (!currentFound) {
+      status = "current";
+      currentFound = true;
+    } else status = "upcoming";
+    return { ...x, status };
+  });
+  const unique = [...new Map(steps.map((x) => [x.tech.id, x])).values()];
+  const completed = unique.reduce((n, x) => n + x.progress.completed, 0);
+  const total = unique.reduce((n, x) => n + x.progress.total, 0);
+  const current = withStatus.find((x) => x.status === "current");
+  return {
+    completed,
+    total,
+    percent: total ? Math.round((completed / total) * 100) : 0,
+    started: unique.some((x) => x.progress.started),
+    steps: withStatus,
+    current: current && { step: current.step, tech: current.tech },
+  };
 }

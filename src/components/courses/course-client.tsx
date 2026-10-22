@@ -43,7 +43,7 @@ export function DayStatusBadge({ lessonIds, quizId }: { lessonIds: string[]; qui
   const catalog = useCatalog();
   const state = useLearnerState();
   const s = dayStatus(catalog, state, lessonIds, quizId);
-  if (s.published === 0) return <Badge>Planned</Badge>;
+  if (s.published === 0) return <Badge>Coming soon</Badge>;
   if (s.complete) return <Badge tone="success">Completed</Badge>;
   if (s.completedLessons > 0 || s.bestScore !== null) return <Badge tone="info">In progress</Badge>;
   return null;
@@ -61,14 +61,14 @@ export function DayLessonList({ lessons }: { lessons: { id: string; title: strin
         return (
           <li key={l.id} className="flex items-center gap-2 text-sm">
             <Icon className={`h-4 w-4 shrink-0 ${done ? "text-success" : "text-subtle"}`} aria-hidden />
-            <span className="sr-only">{!l.url ? "Planned:" : done ? "Completed:" : opened ? "Started:" : "Not started:"}</span>
+            <span className="sr-only">{!l.url ? "Coming soon:" : done ? "Completed:" : opened ? "Started:" : "Not started:"}</span>
             {l.url ? (
               <Link href={l.url} className="text-fg hover:text-primary hover:underline">
                 {l.title}
               </Link>
             ) : (
               <span className="text-muted">
-                {l.title} <span className="text-xs text-subtle">(planned)</span>
+                {l.title} <span className="text-xs text-subtle">(coming soon)</span>
               </span>
             )}
             {l.minutes && l.url && <span className="ml-auto text-xs text-subtle tabular-nums">{l.minutes} min</span>}

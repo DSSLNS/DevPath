@@ -146,6 +146,14 @@ export const DEFAULT_SETTINGS: Settings = {
 
 export const MAX_GOAL_MINUTES = 600;
 
+/** Career-path ids from an earlier release, mapped so saved settings keep pointing at the same path. */
+const LEGACY_PATH_IDS: Record<string, string> = {
+  "frontend-developer": "frontend",
+  "backend-developer": "backend",
+  "fullstack-developer": "fullstack",
+  "test-automation-engineer": "testing",
+};
+
 export function createDefaultState(): PersistedState {
   return {
     version: 1,
@@ -251,7 +259,7 @@ function parseSettings(v: unknown): Settings {
   if (isNum(v.masteryThreshold) && v.masteryThreshold >= 50 && v.masteryThreshold <= 100) s.masteryThreshold = v.masteryThreshold;
   if (isBool(v.showAchievements)) s.showAchievements = v.showAchievements;
   if (isBool(v.unlockAll)) s.unlockAll = v.unlockAll;
-  if (isStr(v.pathId)) s.pathId = v.pathId;
+  if (isStr(v.pathId)) s.pathId = LEGACY_PATH_IDS[v.pathId] ?? v.pathId;
   if (isNum(v.codeTimeoutMs) && v.codeTimeoutMs >= 1000 && v.codeTimeoutMs <= 20000) s.codeTimeoutMs = v.codeTimeoutMs;
   if (isNum(v.dailyGoalMinutes) && Number.isInteger(v.dailyGoalMinutes) && v.dailyGoalMinutes >= 0 && v.dailyGoalMinutes <= MAX_GOAL_MINUTES)
     s.dailyGoalMinutes = v.dailyGoalMinutes;

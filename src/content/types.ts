@@ -303,18 +303,37 @@ export interface Module {
   lessons: Lesson[];
 }
 
+/** One step of a career path. Several steps may point at the same shared course (e.g. React and React Hooks). */
+export interface PathStep {
+  id: string;
+  title: string;
+  /** The technology (course) that teaches this step. */
+  techId: string;
+  /** What this step covers and why it's on the path (inline markdown). */
+  description: string;
+  /** Knowledge-base notes that cover this step today (e.g. Cypress fixtures). */
+  noteIds?: string[];
+}
+
+export type PathAccent = "frontend" | "backend" | "testing" | "fullstack";
+
 export interface LearningPath {
   id: string;
   title: string;
   description: string;
+  /** Curriculum modules on this path, in order (derived from `steps` for career paths). */
   moduleIds: string[];
-  /**
-   * Career paths across technologies (in recommended order). `moduleIds` is then derived
-   * from the technologies' courses; technologies without lessons yet are shown as planned steps.
-   */
+  /** Career paths: ordered steps referencing shared courses. Absent for module-based JavaScript tracks. */
+  steps?: PathStep[];
+  /** Unique technologies on the path, in order of first appearance (derived from `steps`). */
   technologyIds?: string[];
-  /** Why each technology is on the path, keyed by technology id (shown on the path page). */
-  reasons?: Record<string, string>;
+  accent?: PathAccent;
+  /** Short display sequence, e.g. "HTML → CSS → JavaScript". */
+  sequence?: string;
+  skills?: string[];
+  prerequisites?: string;
+  /** Project ids that practise this path's skills. */
+  projectIds?: string[];
 }
 
 // ---------------------------------------------------------------------------

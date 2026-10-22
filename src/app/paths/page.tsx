@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/ui/card";
 
 export const metadata: Metadata = {
   title: "Learning Paths",
-  description: "Guided routes across technologies: frontend, backend, full-stack and test automation.",
+  description: "Frontend, Backend, Testing & Automation and Full Stack learning paths.",
 };
 
 export default function PathsPage() {
@@ -12,7 +12,7 @@ export default function PathsPage() {
     <div className="max-w-5xl">
       <PageHeader
         title="Learning paths"
-        description="A path suggests an order across technologies for a career goal. Choosing one personalises your dashboard and sidebar. Nothing is locked, so you can still open any course at any time."
+        description="Each path suggests an order of courses for a goal. The courses are shared between paths, so progress in one counts everywhere. Nothing is locked: open any course at any time."
       />
       <PathsView />
     </div>

@@ -17,20 +17,21 @@ test.describe("navigation and shell", () => {
   test("new learner sees onboarding, not invented progress", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByTestId("onboarding")).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1, name: "What would you like to learn today?" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Learn Web Development, Step by Step." })).toBeVisible();
   });
 
   test("primary navigation reaches every section", async ({ page }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Main navigation" });
     for (const [label, heading] of [
-      ["Learn", "What would you like to learn today?"],
+      ["Explore Courses", "What would you like to learn today?"],
+      ["Frontend Development", "Frontend Development"],
+      ["Backend Development", "Backend Development"],
+      ["Testing & Automation", "Testing & Automation"],
+      ["Full Stack Development", "Full Stack Development"],
       ["Learning Paths", "Learning paths"],
-      ["JavaScript Curriculum", "Learn JavaScript"],
-      ["JavaScript Concepts", "JavaScript Concepts"],
       ["Practice Lab", "Practice Lab"],
       ["Quizzes & Assessments", "Quizzes & Assessments"],
-      ["E2E Testing Notes", "E2E Testing Notes"],
       ["Projects", "Projects"],
       ["Bookmarks", "Bookmarks"],
       ["My Notes", "My Notes"],

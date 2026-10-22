@@ -350,7 +350,7 @@ export const technologies: Technology[] = [
   },
   {
     id: "prisma",
-    name: "ORMs and Prisma",
+    name: "Database integration and ORMs (Prisma)",
     category: "databases",
     badge: "ORM",
     description: "Work with databases from TypeScript using a schema, generated client and migrations.",

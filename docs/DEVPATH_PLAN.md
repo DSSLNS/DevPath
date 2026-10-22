@@ -48,22 +48,13 @@ This plan covers how the JavaScript-only app (formerly "JS Academy") grows into 
 - A `web` runtime: the learner edits a whole HTML document (with `<style>` and optional `<script>`). It renders in the same opaque-origin, no-network sandbox, and tests run against the rendered document. The content checker verifies solutions and starters in jsdom.
 - Day pages (`/courses/[tech]/day/[n]`) bring together the objectives, the day's lessons, an end-of-day assessment built from the day's quiz questions, and a day summary.
 
-### Accounts and server progress
+### Accounts (removed)
 
-- **Better Auth** (email and password; scrypt password hashing, httpOnly session cookies and a reset-token flow come from the library). No custom cryptography.
-- **Database:** `DATABASE_URL=postgres://…` uses Postgres (`pg`). Without it, local development uses Node's built-in SQLite at `.data/devpath.db`. Both go through Better Auth's Kysely adapter. `npm run db:migrate` creates the tables.
-- **Progress model:** one validated `learner_state` document per user. It holds the same versioned `PersistedState` the client already uses, so it supports every feature immediately. The route handler:
-  - reads the user id only from the session (no ids are accepted from the client)
-  - validates and size-limits every write with the shared `parseState`
-  - uses a revision number to detect concurrent writes from two devices, which are merged with a deterministic `mergeStates`
-
-  Course content is never stored per user.
-- **Guest to account:** guests keep localStorage progress. After sign-in, if the browser has guest progress, the learner is asked whether to merge it into the account. Nothing is merged without confirmation.
-- **Password reset:** an email is sent through Resend when `RESEND_API_KEY` is set. In development the reset link is logged to the server console, and the UI says so.
+An earlier increment added accounts with Better Auth and a Postgres-backed progress API. They were removed at the product owner's request. DevPath has no login, and all progress stays in browser storage.
 
 ### Goals and time
 
-- An optional "What is your learning goal?" modal appears once after sign-up or first login. It is dismissible, never blocks the dashboard, and can be changed or disabled in Settings.
+- An optional "What is your learning goal?" dialog opens from the dashboard's Today card or from Settings. It is never required and can be skipped or disabled.
 - Active time is counted only while a lesson or practice page is visible and the learner has interacted in the last 60 seconds. It is stored per day and per lesson.
 
 ## 3. Phases and status
@@ -73,11 +64,11 @@ This plan covers how the JavaScript-only app (formerly "JS Academy") grows into 
 | 1 Audit | This document | ✅ |
 | 2 Catalog | Categories, technology cards with search, filter and sort, course pages, roadmaps | ✅ |
 | 3 Lesson engine | Full lesson format, `web` runtime, day pages, day assessments and summaries | ✅ engine; 🟡 content (8 new lessons, HTML and CSS Days 1–2) |
-| 4 Auth | Sign-up, login, logout, forgot/reset/change password, account page, goal modal | ✅ (no email verification or MFA yet) |
-| 5 Progress | Server sync, conflict merge, guest import, active time, goal progress on the dashboard | ✅ |
+| 4 Auth | Built, then removed by request: DevPath has no login | — |
+| 5 Progress | Local progress, active time, optional goal, dashboard overview | ✅ |
 | 6 Assessment engine | Existing engine (10 question types) plus day and week assessments | ✅ |
 | 7 Practice | `web` runtime for HTML/CSS. Node.js, SQL and test-tool execution need an isolated server-side sandbox and aren't built; those courses are labelled "guided". | 🟡 |
-| 8 Paths and projects | Four career paths. The project library still has only the original 4 JS projects. | 🟡 |
+| 8 Paths and projects | Four career paths with path pages. The project library still has only the original 4 JS projects. | 🟡 |
 | 9 QA | 78 unit and 38 E2E tests, lint and typecheck clean. No formal accessibility audit with assistive technology yet. | 🟡 |
 
 ## Next steps (recommended order)

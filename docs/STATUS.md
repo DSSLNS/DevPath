@@ -25,10 +25,9 @@ Last updated 2026-10-22. Key: ✅ complete · 🟡 partial · ⬜ not yet implem
 | Course roadmaps and day pages | ✅ | Day-by-day plans with weekly reviews, end-of-day assessments built only from that day's lessons, coding tasks and a day summary |
 | Full lesson format | ✅ | Best practices, quick revision and cheat sheet, end-of-lesson assessment and completion criteria. Required for new modules; legacy JS lessons still need these fields added. |
 | HTML/CSS practice (`web` runtime) | ✅ | Sandboxed preview. Exercises are auto-tested in the app and verified in jsdom by the checker. |
-| Accounts | ✅ | Sign up, log in, log out, forgot and reset password, change password, edit name, protected account page. Email verification, MFA and account deletion are not built yet. |
-| Server progress sync | ✅ | Per-user validated state with revisions, cross-device conflict merge, offline retry, and opt-in guest-progress import |
-| Daily goal and active time | ✅ | Optional, dismissible popup asked once. Change or turn off the goal in Account or Settings. Time counts only while you're active. |
-| Learning paths | ✅ | Frontend, Backend, Full-Stack and Test Automation career paths, plus the 3 JavaScript tracks |
+| Accounts | Removed by design | DevPath has no login. Everything is open, and progress is saved in the browser (export, import and reset are in Settings). |
+| Daily goal and active time | ✅ | Optional: set or dismiss it from the dashboard, and change or turn it off in Settings. Time counts only while you're active. |
+| Dashboard and learning paths | ✅ | Dashboard built around 4 career paths (Frontend, Backend, Testing & Automation, Full Stack) with dedicated path pages. Paths are step sequences over shared courses with completed / up next / upcoming / coming soon status. Also the 3 JavaScript tracks. |
 | Server-side code execution (Node.js, SQL, Cypress, Playwright) | ⬜ | Not built. These technologies are labelled "guided" and no code is claimed to run. A safe implementation needs an isolated execution service such as microVM sandboxes. |
 
 ## Content

@@ -33,7 +33,7 @@ export function TechCard({ tech }: { tech: CatalogTechnology }) {
   const state = useLearnerState();
   const p = techProgress(tech, state);
   const href = `/courses/${tech.id}`;
-  const action = tech.status === "available" ? (p.started ? "Continue learning" : "Start learning") : tech.status === "notes" ? "Read the notes" : "View planned curriculum";
+  const action = tech.status === "available" ? (p.started ? "Continue learning" : "Start learning") : tech.status === "notes" ? "Read the notes" : "See what's coming";
   return (
     <article className="group relative flex flex-col rounded-lg border border-border bg-surface p-4 transition-colors hover:border-border-strong" data-testid={`tech-card-${tech.id}`}>
       <div className="flex items-start gap-3">
@@ -46,9 +46,9 @@ export function TechCard({ tech }: { tech: CatalogTechnology }) {
           </h3>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <DifficultyBadge level={tech.level} />
-            {tech.status === "available" && tech.plannedLessons > 0 && <Badge>More lessons coming</Badge>}
+            {tech.status === "available" && tech.plannedLessons > 0 && <Badge tone="info">In progress</Badge>}
             {tech.status === "notes" && <Badge tone="info">Reference notes</Badge>}
-            {tech.status === "planned" && <Badge>Planned</Badge>}
+            {tech.status === "planned" && <Badge>Coming soon</Badge>}
           </div>
         </div>
       </div>

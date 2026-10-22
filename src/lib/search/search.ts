@@ -16,6 +16,8 @@ export function tokenizeQuery(q: string) {
 }
 
 const CATEGORY_BOOST: Record<SearchCategory, number> = {
+  course: 8,
+  path: 7,
   lesson: 6,
   kb: 5,
   concept: 4,

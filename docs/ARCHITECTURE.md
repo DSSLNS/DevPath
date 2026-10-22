@@ -20,29 +20,22 @@
 ## State and persistence
 
 - `src/lib/store/store.ts` holds an immutable `LearnerStore` exposed through `useSyncExternalStore`. Server rendering and hydration use the empty default state. The real state loads on mount, and components that restore saved input remount once at that point (keyed by `hydrated`), so there are no hydration mismatches.
-- Persistence goes through a `StorageAdapter`:
-  - **Guests:** `localStorageAdapter`, with cross-tab sync through the `storage` event.
-  - **Signed-in learners:** `serverAdapter` (`lib/store/server-adapter.ts`).
-    - It loads from `GET /api/progress` and saves with debounced `PUT /api/progress` carrying the last known `revision`.
-    - A 409 means another device saved first. The client merges the server copy with its own (`lib/store/merge.ts`) and saves again.
-    - Network failures keep the latest snapshot in memory and retry with backoff and on `online`.
-    - Nothing is written to localStorage, and logout does a full reload.
-- `components/layout/providers.tsx` bootstraps on mount: `GET /api/auth/get-session`, then either the server or the guest adapter. After sign-in, guest progress found in the browser is offered for import. It is merged only on confirmation, and then the guest copy is removed.
-- The schema is versioned (`version: 1`). `parseState` validates every field on the client and again on the server before anything is stored.
+- Persistence goes through a `StorageAdapter`. The app uses `localStorageAdapter` (key `jsacademy:state:v1`, kept so existing learners keep their progress), with cross-tab sync through the `storage` event. There are no accounts, so progress belongs to this browser on this device. Settings offers export, import and reset (with confirmation).
+- The schema is versioned (`version: 1`). `parseState` validates every field on load and is where migrations go. For example, path ids saved by an earlier release are mapped to the current ones.
 
-## Accounts and server data
+## Learning paths
 
-| Concern | Module | Notes |
-| --- | --- | --- |
-| Auth | `lib/server/auth.ts`, `app/api/auth/[...all]` | Better Auth with email and password: scrypt hashing, httpOnly session cookies, reset tokens that expire after 1 hour, sessions revoked on reset, and built-in rate limiting in production. |
-| Database | `lib/server/db.ts` | Postgres when `DATABASE_URL` is set, otherwise `node:sqlite`. Tables come from Better Auth's schema plus a `learnerState` model (`userId` unique, `state` JSON text, `revision`). Run `npm run db:migrate`; local SQLite also migrates automatically in development. |
-| Progress API | `app/api/progress/route.ts`, `lib/server/progress.ts` | The user id always comes from the session. Writes are validated, size-limited (1 MB), checked for a same-origin `Origin` header, and applied with compare-and-set on `revision`. |
-| Protected page | `app/account/page.tsx` | The session is read inside `<Suspense>` (required by Cache Components). The page redirects to `/login?next=/account` without a session. |
-| Email | `lib/server/email.ts` | Resend over HTTPS when configured, otherwise logged to the console in development. |
+- `src/content/paths.ts` defines the four career paths (Frontend, Backend, Testing & Automation, Full Stack) as ordered **steps**. Each step references a shared course (technology) and, optionally, knowledge-base notes. Several steps may point at one course, for example React and React Hooks. Courses are never copied between paths, so progress in a course counts for every path that uses it.
+- `lib/courses.ts` → `pathProgress` derives each step's status from saved progress:
+  - **completed:** every published lesson of the step's course is done
+  - **up next:** the first unfinished step that can be studied now
+  - **upcoming:** later steps
+  - **coming soon:** the course has nothing published yet
 
-**Data model choice.** Progress is stored as one validated document per user, not as normalised rows. The learner state is already a versioned, validated document used by every feature, and storing it whole gives atomic cross-device saves with a single revision check. Course content is never stored per user. If reporting across users is needed later, normalised tables can be derived from these documents without changing the client.
+  Steps never lock anything.
+- Routes: `/paths` (all paths) and `/paths/[id]` (sequence, progress, recommended next course, skills, prerequisites and related projects).
 
-**Goals and time.** `settings.dailyGoalMinutes` (0 means no goal) and `settings.goalPromptSeen` sync with the account. `lib/activity-time.ts` counts time only while the page is visible and the learner has interacted in the last 60 seconds. Time is stored per day (`timeLog`) and per lesson (`activeSeconds`). Merges take the maximum, never the sum, so time is never inflated.
+**Goals and time.** `settings.dailyGoalMinutes` (0 means no goal) is optional. The learner sets it from the dashboard or Settings, or dismisses the suggestion (`settings.goalPromptSeen`). `lib/activity-time.ts` counts time only while the page is visible and the learner has interacted in the last 60 seconds. Time is stored per day (`timeLog`) and per lesson (`activeSeconds`).
 
 ## Engines
 
