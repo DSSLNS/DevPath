@@ -14,6 +14,8 @@ import { toolingModule } from "./m13-tooling";
 import { networkingModule } from "./m14-networking";
 import { typescriptModule } from "./m15-typescript";
 import { reactModule } from "./m16-react";
+import { htmlModule } from "./m17-html";
+import { cssModule } from "./m18-css";
 import type { Module } from "@/content/types";
 
 export const modules: Module[] = [
@@ -33,4 +35,6 @@ export const modules: Module[] = [
   networkingModule,
   typescriptModule,
   reactModule,
+  htmlModule,
+  cssModule,
 ];

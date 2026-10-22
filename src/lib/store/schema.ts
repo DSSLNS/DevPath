@@ -13,6 +13,8 @@ export interface LessonProgress {
   completedAt?: string;
   /** Last section the learner was reading (anchor id), restored by Continue Learning. */
   lastSection?: string;
+  /** Seconds of active engagement (page visible and recently interacted with). */
+  activeSeconds?: number;
 }
 
 export interface ExerciseProgress {
@@ -33,7 +35,7 @@ export interface QuizAnswerRecord {
   correct: boolean;
 }
 
-export type QuizKind = "lesson" | "module" | "mixed" | "challenge" | "interview" | "final" | "revision";
+export type QuizKind = "lesson" | "module" | "day" | "mixed" | "challenge" | "interview" | "final" | "revision";
 
 export interface QuizAttempt {
   id: string;
@@ -105,6 +107,10 @@ export interface Settings {
   unlockAll: boolean;
   pathId: string;
   codeTimeoutMs: number;
+  /** Optional daily learning goal in minutes; 0 means no goal. */
+  dailyGoalMinutes: number;
+  /** The learner has answered or dismissed the "What is your learning goal?" prompt. */
+  goalPromptSeen: boolean;
 }
 
 export interface PersistedState {
@@ -120,6 +126,8 @@ export interface PersistedState {
   projects: Record<string, ProjectProgress>;
   /** Local calendar days (YYYY-MM-DD) with learning activity. */
   activity: string[];
+  /** Active learning seconds per local calendar day (YYYY-MM-DD). */
+  timeLog: Record<string, number>;
   recentSearches: string[];
   settings: Settings;
 }
@@ -132,7 +140,11 @@ export const DEFAULT_SETTINGS: Settings = {
   unlockAll: false,
   pathId: "javascript",
   codeTimeoutMs: 5000,
+  dailyGoalMinutes: 0,
+  goalPromptSeen: false,
 };
+
+export const MAX_GOAL_MINUTES = 600;
 
 export function createDefaultState(): PersistedState {
   return {
@@ -146,6 +158,7 @@ export function createDefaultState(): PersistedState {
     challenges: {},
     projects: {},
     activity: [],
+    timeLog: {},
     recentSearches: [],
     settings: { ...DEFAULT_SETTINGS },
   };
@@ -177,7 +190,19 @@ function list<T>(v: unknown, check: (x: unknown) => x is T): { value: T[]; dropp
 }
 
 const isLessonProgress = (x: unknown): x is LessonProgress =>
-  isObj(x) && isStr(x.firstOpenedAt) && isStr(x.lastOpenedAt) && (x.completedAt === undefined || isStr(x.completedAt));
+  isObj(x) &&
+  isStr(x.firstOpenedAt) &&
+  isStr(x.lastOpenedAt) &&
+  (x.completedAt === undefined || isStr(x.completedAt)) &&
+  (x.activeSeconds === undefined || (isNum(x.activeSeconds) && x.activeSeconds >= 0));
+
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+function parseTimeLog(v: unknown): Record<string, number> {
+  if (!isObj(v)) return {};
+  const entries = Object.entries(v).filter(([k, n]) => DAY_KEY.test(k) && isNum(n) && n >= 0 && n <= 86400);
+  return Object.fromEntries(entries.sort(([a], [b]) => a.localeCompare(b)).slice(-400)) as Record<string, number>;
+}
 
 const isExerciseProgress = (x: unknown): x is ExerciseProgress =>
   isObj(x) && isNum(x.attempts) && isNum(x.correctCount) && isBool(x.lastCorrect) && isStr(x.lastAttemptAt);
@@ -228,6 +253,9 @@ function parseSettings(v: unknown): Settings {
   if (isBool(v.unlockAll)) s.unlockAll = v.unlockAll;
   if (isStr(v.pathId)) s.pathId = v.pathId;
   if (isNum(v.codeTimeoutMs) && v.codeTimeoutMs >= 1000 && v.codeTimeoutMs <= 20000) s.codeTimeoutMs = v.codeTimeoutMs;
+  if (isNum(v.dailyGoalMinutes) && Number.isInteger(v.dailyGoalMinutes) && v.dailyGoalMinutes >= 0 && v.dailyGoalMinutes <= MAX_GOAL_MINUTES)
+    s.dailyGoalMinutes = v.dailyGoalMinutes;
+  if (isBool(v.goalPromptSeen)) s.goalPromptSeen = v.goalPromptSeen;
   return s;
 }
 
@@ -263,7 +291,8 @@ export function parseState(raw: string | null): ParseResult {
     notes: take(list(data.notes, isNote)).map((n) => ({ ...n, tags: strArray(n.tags), lessonIds: strArray(n.lessonIds) })),
     challenges: take(record(data.challenges, isChallengeProgress)),
     projects: take(record(data.projects, isProjectProgress)),
-    activity: strArray(data.activity).filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d)),
+    activity: strArray(data.activity).filter((d) => DAY_KEY.test(d)),
+    timeLog: parseTimeLog(data.timeLog),
     recentSearches: strArray(data.recentSearches).slice(0, 8),
     settings: parseSettings(data.settings),
   };

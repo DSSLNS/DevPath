@@ -5,6 +5,7 @@
 import vm from "node:vm";
 import { SANDBOX_RUNTIME_SOURCE } from "./runtime-source";
 import type { RunResult } from "./types";
+import { injectIntoHead } from "./web-document";
 import type { CodeTest } from "@/content/types";
 
 export async function runInNode(code: string, tests: CodeTest[] = [], timeoutMs = 4000): Promise<RunResult> {
@@ -62,9 +63,21 @@ export function logsToOutput(result: RunResult): string {
 }
 
 /** Runs code against an HTML document using jsdom (for "dom" runtime content). */
-export async function runInJsdom(html: string, code: string, tests: CodeTest[] = [], timeoutMs = 4000): Promise<RunResult> {
+export function runInJsdom(html: string, code: string, tests: CodeTest[] = [], timeoutMs = 4000): Promise<RunResult> {
+  return runInJsdomDocument(`<!doctype html><html><body>${html}</body></html>`, code, tests, timeoutMs);
+}
+
+/**
+ * Runs tests against a learner-written page (for "web" runtime content). Learner <script>
+ * elements are not executed here; web-runtime tests check markup and styles.
+ */
+export function runWebPage(page: string, tests: CodeTest[] = [], timeoutMs = 4000): Promise<RunResult> {
+  return runInJsdomDocument(injectIntoHead(page, ""), "", tests, timeoutMs);
+}
+
+async function runInJsdomDocument(documentHtml: string, code: string, tests: CodeTest[], timeoutMs: number): Promise<RunResult> {
   const { JSDOM } = await import("jsdom");
-  const dom = new JSDOM(`<!doctype html><html><body>${html}</body></html>`, { runScripts: "outside-only" });
+  const dom = new JSDOM(documentHtml, { runScripts: "outside-only" });
   const win = dom.window as unknown as { eval: (s: string) => unknown; __jsaRun: (c: string, t: CodeTest[]) => Promise<RunResult> };
   win.eval(SANDBOX_RUNTIME_SOURCE);
   let timer: NodeJS.Timeout | undefined;

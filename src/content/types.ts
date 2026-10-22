@@ -1,5 +1,5 @@
 /**
- * Content model for JS Academy.
+ * Content model for DevPath.
  *
  * All curriculum, knowledge-base, practice and project content is authored as
  * typed TypeScript data. Text fields marked "inline markdown" support:
@@ -18,12 +18,18 @@ export type Tech =
   | "dom"
   | "node"
   | "cypress"
-  | "playwright";
+  | "playwright"
+  | "html"
+  | "css";
 
 export type CodeLanguage = "js" | "ts" | "jsx" | "tsx" | "html" | "css" | "bash" | "json" | "text";
 
-/** "js" runs in an isolated Web Worker (no DOM). "dom" runs in a sandboxed iframe document with a visible preview. */
-export type Runtime = "js" | "dom";
+/**
+ * "js" runs in an isolated Web Worker (no DOM).
+ * "dom" runs a script against fixed `html` in a sandboxed iframe with a visible preview.
+ * "web" renders the code itself as an HTML document (with `<style>` / `<script>`) in the same sandbox.
+ */
+export type Runtime = "js" | "dom" | "web";
 
 export interface Reference {
   title: string;
@@ -140,8 +146,15 @@ export interface PredictOutputExercise extends ExerciseBase {
   answer: string;
 }
 
+/**
+ * `runtime: "web"` on code / find-bug exercises: the learner writes an HTML document,
+ * and the tests run as JavaScript against the rendered document (`document.querySelector`, ...).
+ */
+export type ExerciseRuntime = "js" | "web";
+
 export interface FindBugExercise extends ExerciseBase {
   type: "find-bug";
+  runtime?: ExerciseRuntime;
   /** Buggy code the learner must fix. */
   code: string;
   tests: CodeTest[];
@@ -158,6 +171,7 @@ export interface FillBlankExercise extends ExerciseBase {
 
 export interface CodeExercise extends ExerciseBase {
   type: "code";
+  runtime?: ExerciseRuntime;
   starter: string;
   tests: CodeTest[];
   solution: string;
@@ -261,6 +275,12 @@ export interface Lesson {
   references: Reference[];
   /** Override default practice requirements for this lesson. */
   requirements?: Partial<PracticeRequirements>;
+  /** Recommended practices (inline markdown). Shown after the teaching sections. */
+  bestPractices?: string[];
+  /** Compact reference of syntax, commands or concepts from this lesson. */
+  cheatSheet?: { item: string; meaning: string }[];
+  /** What the learner should be able to explain or build after this lesson (inline markdown). */
+  completionCriteria?: string[];
 }
 
 export interface PracticeRequirements {
@@ -288,6 +308,13 @@ export interface LearningPath {
   title: string;
   description: string;
   moduleIds: string[];
+  /**
+   * Career paths across technologies (in recommended order). `moduleIds` is then derived
+   * from the technologies' courses; technologies without lessons yet are shown as planned steps.
+   */
+  technologyIds?: string[];
+  /** Why each technology is on the path, keyed by technology id (shown on the path page). */
+  reasons?: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------

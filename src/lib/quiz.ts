@@ -36,6 +36,7 @@ export interface BuiltQuiz {
 const KIND_TITLES: Record<QuizKind, string> = {
   lesson: "Lesson quiz",
   module: "Module assessment",
+  day: "Day assessment",
   mixed: "Mixed practice",
   challenge: "Challenge mode",
   interview: "Mock interview",

@@ -17,14 +17,16 @@ test.describe("navigation and shell", () => {
   test("new learner sees onboarding, not invented progress", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByTestId("onboarding")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Start learning JavaScript" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "What would you like to learn today?" })).toBeVisible();
   });
 
   test("primary navigation reaches every section", async ({ page }) => {
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Main navigation" });
     for (const [label, heading] of [
-      ["Learn JavaScript", "Learn JavaScript"],
+      ["Learn", "What would you like to learn today?"],
+      ["Learning Paths", "Learning paths"],
+      ["JavaScript Curriculum", "Learn JavaScript"],
       ["JavaScript Concepts", "JavaScript Concepts"],
       ["Practice Lab", "Practice Lab"],
       ["Quizzes & Assessments", "Quizzes & Assessments"],
@@ -32,7 +34,7 @@ test.describe("navigation and shell", () => {
       ["Projects", "Projects"],
       ["Bookmarks", "Bookmarks"],
       ["My Notes", "My Notes"],
-      ["Progress & Achievements", "Progress & Achievements"],
+      ["My Progress", "Progress & Achievements"],
       ["Settings", "Settings"],
     ]) {
       await nav.getByRole("link", { name: label, exact: true }).click();
@@ -58,7 +60,7 @@ test.describe("lesson experience", () => {
     await page.goto(LESSON);
     await expect(page.getByRole("heading", { level: 1, name: "map" })).toBeVisible();
     for (const h of ["Learning objectives", "Prerequisites"]) await expect(page.getByRole("heading", { name: h })).toBeVisible();
-    for (const h of ["Try it yourself", "Common mistakes", "Debugging tips", "Practice", "Quiz", "Summary"])
+    for (const h of ["Try it yourself", "Common mistakes", "Debugging tips", "Quick revision", "Practice", "End-of-lesson assessment", "Related and further reading"])
       await expect(page.getByRole("heading", { level: 2, name: h, exact: true })).toBeVisible();
   });
 

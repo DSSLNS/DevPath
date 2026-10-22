@@ -3,7 +3,7 @@
  * Ensures reference solutions pass, starters/buggy code fail, and documented
  * outputs match what the in-app sandbox actually prints.
  */
-import { logsToOutput, runInJsdom, runInNode } from "@/lib/sandbox/node-runner";
+import { logsToOutput, runInJsdom, runInNode, runWebPage } from "@/lib/sandbox/node-runner";
 import type { RunResult } from "@/lib/sandbox/types";
 import type { Block, Challenge, CodeExample, Exercise, KbNote, Lesson } from "./types";
 import type { ContentIssue } from "./validate";
@@ -32,8 +32,10 @@ async function verifyTested(
   tests: { name: string; code: string }[],
   issues: ContentIssue[],
   html?: string,
+  web = false,
 ) {
-  const run = (code: string) => (html !== undefined ? runInJsdom(html, code, tests) : runInNode(code, tests));
+  const run = (code: string) =>
+    web ? runWebPage(code, tests) : html !== undefined ? runInJsdom(html, code, tests) : runInNode(code, tests);
   const good = await run(passing);
   if (good.error || good.tests.length !== tests.length || good.tests.some((t) => !t.passed)) {
     issues.push({ where, message: `Reference solution does not pass: ${describe(good)}` });
@@ -64,8 +66,8 @@ async function verifyOutput(where: string, code: string, expected: string, issue
 
 export async function verifyExercise(ex: Exercise, where: string, issues: ContentIssue[]) {
   const w = `${where} ${ex.id}`;
-  if (ex.type === "code") await verifyTested(w, ex.solution, ex.starter, ex.tests, issues);
-  else if (ex.type === "find-bug") await verifyTested(w, ex.solution, ex.code, ex.tests, issues);
+  if (ex.type === "code") await verifyTested(w, ex.solution, ex.starter, ex.tests, issues, undefined, ex.runtime === "web");
+  else if (ex.type === "find-bug") await verifyTested(w, ex.solution, ex.code, ex.tests, issues, undefined, ex.runtime === "web");
   else if (ex.type === "predict-output") await verifyOutput(w, ex.code, ex.answer, issues);
 }
 
@@ -73,13 +75,14 @@ export async function verifyBlocks(blocks: Block[], where: string, issues: Conte
   for (const [i, b] of blocks.entries()) {
     if (b.kind !== "code" || b.output === undefined) continue;
     if (b.language && b.language !== "js") continue;
-    if (b.runtime === "dom") continue;
+    if (b.runtime === "dom" || b.runtime === "web") continue;
     await verifyOutput(`${where} block[${i}]`, b.code, b.output, issues);
   }
 }
 
 export async function verifyExample(ex: CodeExample, where: string, issues: ContentIssue[]) {
-  const r = ex.runtime === "dom" ? await runInJsdom(ex.html ?? "", ex.code) : await runInNode(ex.code);
+  const r =
+    ex.runtime === "web" ? await runWebPage(ex.code) : ex.runtime === "dom" ? await runInJsdom(ex.html ?? "", ex.code) : await runInNode(ex.code);
   if (r.syntaxError) issues.push({ where: `${where} example ${ex.id}`, message: `Syntax error: ${r.error}` });
   if (r.timedOut) issues.push({ where: `${where} example ${ex.id}`, message: "Example timed out" });
 }

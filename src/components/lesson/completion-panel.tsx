@@ -12,7 +12,17 @@ import { renderInline } from "@/lib/markdown";
  * Completion rule: the learner explicitly marks the lesson complete. The panel
  * shows what they covered so the decision is informed, but nothing is auto-completed.
  */
-export function CompletionPanel({ lessonId, objectives, nextLessonId }: { lessonId: string; objectives: string[]; nextLessonId?: string }) {
+export function CompletionPanel({
+  lessonId,
+  objectives,
+  criteria,
+  nextLessonId,
+}: {
+  lessonId: string;
+  objectives: string[];
+  criteria?: string[];
+  nextLessonId?: string;
+}) {
   const catalog = useCatalog();
   const state = useLearnerState();
   const lesson = catalog.lessonById.get(lessonId);
@@ -28,8 +38,10 @@ export function CompletionPanel({ lessonId, objectives, nextLessonId }: { lesson
       </h2>
       <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
         <div className="rounded-md bg-surface-2 p-3">
-          <dt className="text-xs text-subtle">Quiz result</dt>
-          <dd className="font-semibold">{quiz === null ? "Not taken yet" : `Best score ${quiz}%`}</dd>
+          <dt className="text-xs text-subtle">Assessment</dt>
+          <dd className="font-semibold">
+            {quiz === null ? "Not taken yet" : `Best score ${quiz}% · ${quiz >= state.settings.masteryThreshold ? "passed" : `pass mark ${state.settings.masteryThreshold}%`}`}
+          </dd>
         </div>
         <div className="rounded-md bg-surface-2 p-3">
           <dt className="text-xs text-subtle">Exercises attempted</dt>
@@ -53,7 +65,20 @@ export function CompletionPanel({ lessonId, objectives, nextLessonId }: { lesson
           ))}
         </ul>
       </div>
-      <div className="mt-5 flex flex-wrap gap-2">
+      {criteria && criteria.length > 0 && (
+        <div className="mt-4">
+          <h3 className="text-xs font-semibold tracking-wide text-subtle uppercase">Completion criteria: you should now be able to</h3>
+          <ul className="mt-1.5 list-disc space-y-1 pl-5 text-sm">
+            {criteria.map((c) => (
+              <li key={c}>{renderInline(c)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="mt-4 text-xs text-muted">
+        Marking the lesson complete records that you have worked through it. Passing the assessment is tracked separately and is what counts towards mastery.
+      </p>
+      <div className="mt-3 flex flex-wrap gap-2">
         {done ? (
           <Button onClick={() => learnerStore.setLessonComplete(lessonId, false)}>
             <RotateCcw className="h-4 w-4" aria-hidden /> Mark as not complete

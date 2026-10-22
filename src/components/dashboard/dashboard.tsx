@@ -18,6 +18,9 @@ import { ProgressBar, ProgressRing } from "@/components/ui/progress";
 import { buttonClass } from "@/components/ui/button";
 import { DifficultyBadge } from "@/components/ui/badge";
 import { contentHref, contentTitle } from "@/components/bookmarks/content-ref";
+import { CourseCatalog } from "@/components/courses/course-catalog";
+import { technologyForLesson, techProgress } from "@/lib/courses";
+import { MyLearningPaths, ProgressOverview, TodayPlan, WelcomeHeader } from "./learning-overview";
 
 export function Dashboard() {
   const catalog = useCatalog();
@@ -29,7 +32,10 @@ export function Dashboard() {
   }
 
   const hasActivity = Object.keys(s.lessons).length > 0 || s.quizAttempts.length > 0 || Object.keys(s.exercises).length > 0;
-  const next = recommendedNextLesson(catalog, s);
+  // Recommend the next lesson in the technology being studied right now; otherwise follow the selected path.
+  const focusTech = s.lastLessonId ? technologyForLesson(catalog, s.lastLessonId) : undefined;
+  const focusNextId = focusTech ? techProgress(focusTech, s).nextLessonId : undefined;
+  const next = (focusNextId && catalog.lessonById.get(focusNextId)) || recommendedNextLesson(catalog, s);
   const path = catalog.paths.find((p) => p.id === s.settings.pathId) ?? catalog.paths[0];
 
   if (!hasActivity) return <Onboarding nextLessonId={next?.id} />;
@@ -58,7 +64,7 @@ export function Dashboard() {
 
   return (
     <div>
-      <PageHeader title="Dashboard" description="Pick up where you left off and see what to study next." />
+      <WelcomeHeader />
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-5 lg:col-span-2">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -115,18 +121,26 @@ export function Dashboard() {
           </div>
         </Card>
 
+        <TodayPlan nextHref={next ? catalog.lessonUrl(next.id) : undefined} nextTitle={next?.title} />
+        <div className="lg:col-span-2">
+          <MyLearningPaths />
+        </div>
+        <div className="lg:col-span-3">
+          <ProgressOverview />
+        </div>
+
         <Card className="lg:col-span-2">
           <CardHeader title="Modules in your path" action={<Link href="/learn" className="text-xs text-primary hover:underline">View curriculum</Link>} />
           <ul className="divide-y divide-border">
             {pathModules(catalog, s.settings.pathId)
               .filter((m) => m.lessons.length)
               .slice(0, 8)
-              .map((m) => {
+              .map((m, index) => {
                 const p = moduleProgress(s, m);
                 return (
                   <li key={m.id} className="flex items-center gap-3 px-4 py-2.5">
                     <Link href={`/learn/${m.slug}`} className="w-48 shrink-0 truncate text-sm hover:text-primary sm:w-64">
-                      {m.order}. {m.title}
+                      {index + 1}. {m.title}
                     </Link>
                     <ProgressBar value={p.percent} label={`${m.title} progress`} />
                     <span className="w-12 shrink-0 text-right text-xs text-subtle tabular-nums">
@@ -260,6 +274,14 @@ export function Dashboard() {
           )}
         </Card>
       </div>
+
+      <section aria-labelledby="choose-tech-h" className="mt-10">
+        <h2 id="choose-tech-h" className="text-xl font-semibold tracking-tight">
+          What would you like to learn today?
+        </h2>
+        <p className="mb-4 text-sm text-muted">Explore another technology. Your progress in each one is tracked separately.</p>
+        <CourseCatalog compact headingLevel={3} />
+      </section>
     </div>
   );
 }
@@ -271,11 +293,13 @@ function Onboarding({ nextLessonId }: { nextLessonId?: string }) {
   return (
     <div className="mx-auto max-w-4xl" data-testid="onboarding">
       <PageHeader
-        eyebrow="Welcome"
-        title="Start learning JavaScript"
-        description="You haven't started yet, so there's no progress to show. Choose a learning path, then open your first lesson. Your progress is saved in this browser."
+        eyebrow="Welcome to DevPath"
+        title="What would you like to learn today?"
+        description="You haven't started yet, so there's no progress to show. Pick a technology below, or choose a guided learning path. Each course has a day-by-day plan, but you can learn at your own pace and in any order."
       />
-      <h2 className="mb-2 text-sm font-semibold">1. Choose a learning path</h2>
+      <h2 className="mb-2 text-sm font-semibold">Choose a technology</h2>
+      <CourseCatalog compact headingLevel={3} />
+      <h2 className="mt-8 mb-2 text-sm font-semibold">Or follow a learning path</h2>
       <div className="grid gap-3 md:grid-cols-3" role="radiogroup" aria-label="Learning path">
         {catalog.paths.map((p) => {
           const selected = s.settings.pathId === p.id;
@@ -290,27 +314,30 @@ function Onboarding({ nextLessonId }: { nextLessonId?: string }) {
             >
               <div className="font-semibold">{p.title}</div>
               <p className="mt-1 text-sm text-muted">{p.description}</p>
-              <p className="mt-2 text-xs text-subtle">{p.moduleIds.length} modules</p>
+              <p className="mt-2 text-xs text-subtle">
+                {p.technologyIds ? `${p.technologyIds.length} technologies` : `${p.moduleIds.length} modules`}
+              </p>
             </button>
           );
         })}
       </div>
-      <h2 className="mt-6 mb-2 text-sm font-semibold">2. Begin</h2>
+      <h2 className="mt-6 mb-2 text-sm font-semibold">Begin your path</h2>
       <div className="flex flex-wrap gap-2">
         {nextLessonId && (
           <Link href={catalog.lessonUrl(nextLessonId)} className={buttonClass("primary")} data-testid="start-first-lesson">
             Start with “{catalog.lessonById.get(nextLessonId)?.title}” <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
         )}
-        <Link href="/learn" className={buttonClass("secondary")}>
-          Browse the curriculum
+        <Link href="/paths" className={buttonClass("secondary")}>
+          Compare learning paths
         </Link>
         <Link href="/e2e" className={buttonClass("ghost")}>
           Explore E2E testing notes
         </Link>
       </div>
       <p className="mt-6 text-xs text-subtle">
-        {published} lessons are published so far across {catalog.modules.filter((m) => m.lessons.length).length} modules. The rest of the curriculum is listed as planned.
+        {published} lessons are published so far across {catalog.technologies.filter((t) => t.status === "available").length} technologies. The rest of the
+        curriculum is listed as planned.
       </p>
     </div>
   );

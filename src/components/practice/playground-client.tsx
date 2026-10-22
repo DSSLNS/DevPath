@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { CodeExample } from "@/content/types";
+import type { CodeExample, Runtime } from "@/content/types";
 import { CodeRunner } from "@/components/editor/code-runner";
 import { useStoreMeta } from "@/lib/store/hooks";
 
@@ -23,12 +23,34 @@ function readDraft() {
   }
 }
 
+const WEB_STARTER = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>My page</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+      .card { border: 1px solid #ccc; border-radius: 8px; padding: 1rem; max-width: 20rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Hello, DevPath!</h1>
+      <article class="card">
+        <h2>Edit me</h2>
+        <p>Change the HTML or CSS, then press Run.</p>
+      </article>
+    </main>
+  </body>
+</html>
+`;
+
 function Playground({ starter, library }: { starter: string; library: Library }) {
   const [initial, setInitial] = useState(() => readDraft() ?? starter);
   const [selected, setSelected] = useState("");
   const [key, setKey] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const [runtime, setRuntime] = useState<"js" | "dom">("js");
+  const [runtime, setRuntime] = useState<Runtime>("js");
   const [html, setHtml] = useState("");
 
   const groups = [...new Set(library.map((e) => e.group))];
@@ -70,13 +92,18 @@ function Playground({ starter, library }: { starter: string; library: Library })
           <select
             value={runtime}
             onChange={(e) => {
-              setRuntime(e.target.value as "js" | "dom");
+              const next = e.target.value as Runtime;
+              const looksLikeHtml = /^\s*</.test(initial);
+              if (next === "web" && !looksLikeHtml) setInitial(WEB_STARTER);
+              if (next !== "web" && looksLikeHtml) setInitial(starter);
+              setRuntime(next);
               setKey((k) => k + 1);
             }}
             className="h-9 rounded-md border border-border bg-surface px-2 text-sm"
           >
             <option value="js">JavaScript (worker, no DOM)</option>
             <option value="dom">DOM page with preview</option>
+            <option value="web">HTML &amp; CSS page</option>
           </select>
         </label>
       </div>
@@ -84,7 +111,7 @@ function Playground({ starter, library }: { starter: string; library: Library })
         key={key}
         title="Playground"
         initialCode={initial}
-        resetCode={starter}
+        resetCode={runtime === "web" ? WEB_STARTER : starter}
         runtime={runtime}
         html={runtime === "dom" ? html || '<div id="app"><h1>Hello</h1><button id="btn">Click me</button></div>' : ""}
         editorMinHeight={320}

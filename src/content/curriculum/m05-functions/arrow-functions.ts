@@ -67,7 +67,7 @@ export const arrowFunctions: Lesson = {
           kind: "callout",
           tone: "info",
           title: "`this` comes later",
-          text: "You will study `this` properly in [The this Keyword](/learn/advanced/this-keyword). For now, remember: use arrow functions for callbacks and small helpers, and regular method syntax for object methods that use `this`.",
+          text: "You will study `this` properly in the upcoming *The this Keyword* lesson (Advanced JavaScript module). For now, remember: use arrow functions for callbacks and small helpers, and regular method syntax for object methods that use `this`.",
         },
       ],
     },

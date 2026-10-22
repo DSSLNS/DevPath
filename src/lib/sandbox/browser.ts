@@ -19,6 +19,7 @@
 import { SANDBOX_RUNTIME_SOURCE } from "./runtime-source";
 import type { LogEntry, RunResult } from "./types";
 import type { CodeTest } from "@/content/types";
+import { injectIntoHead } from "./web-document";
 
 const CSP_JS = "default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob:; worker-src blob:; style-src 'unsafe-inline'";
 const CSP_DOM = "default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data:; font-src data:";
@@ -81,11 +82,39 @@ function domRuntimeDocument(html: string, dark: boolean) {
 </script></body></html>`;
 }
 
+/**
+ * "web" runtime: the learner's code IS the page (HTML with optional <style>/<script>).
+ * The CSP and the test runtime are injected into its <head>; the runtime signals "ready"
+ * only after the document has been parsed so tests see the complete page.
+ */
+const CSP_WEB = "default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data:; font-src data:; media-src data:";
+
+export function webRuntimeDocument(learnerHtml: string) {
+  const inject = `<meta http-equiv="Content-Security-Policy" content="${CSP_WEB}"><script>
+(function () {
+  ${SANDBOX_RUNTIME_SOURCE}
+  window.__jsaSetEmitter(function (l) { parent.postMessage({ type: 'log', log: l }, '*'); });
+  window.addEventListener('error', function (e) { parent.postMessage({ type: 'log', log: { level: 'error', text: 'Uncaught ' + (e.error && e.error.name ? e.error.name + ': ' + e.error.message : e.message) } }, '*'); });
+  var ran = false;
+  window.addEventListener('message', function (e) {
+    if (e.source !== window.parent) return;
+    var msg = e.data;
+    if (!msg || msg.type !== 'run' || ran) return;
+    ran = true;
+    window.__jsaRun(msg.code, msg.tests).then(function (r) { parent.postMessage({ type: 'done', result: r }, '*'); });
+  });
+  function ready() { parent.postMessage({ type: 'ready' }, '*'); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ready); else ready();
+})();
+</script>`;
+  return injectIntoHead(learnerHtml, inject);
+}
+
 export interface RunOptions {
   code: string;
   tests?: CodeTest[];
-  runtime?: "js" | "dom";
-  /** Body HTML for the dom runtime. */
+  runtime?: "js" | "dom" | "web";
+  /** Body HTML for the dom runtime; the full page for the web runtime. */
   html?: string;
   timeoutMs?: number;
   /** Live log callback (logs also arrive in the final result). */
@@ -103,20 +132,22 @@ export interface RunHandle {
 
 export function runInSandbox(opts: RunOptions): RunHandle {
   const runtime = opts.runtime ?? "js";
+  const visible = runtime !== "js";
   const timeoutMs = opts.timeoutMs ?? 5000;
   const iframe = document.createElement("iframe");
   iframe.setAttribute("sandbox", "allow-scripts");
   iframe.setAttribute("referrerpolicy", "no-referrer");
-  iframe.setAttribute("aria-hidden", runtime === "dom" ? "false" : "true");
-  iframe.title = runtime === "dom" ? "Code output preview" : "Code sandbox";
-  if (runtime === "dom" && opts.previewContainer) {
+  iframe.setAttribute("aria-hidden", visible ? "false" : "true");
+  iframe.title = visible ? "Code output preview" : "Code sandbox";
+  if (visible && opts.previewContainer) {
     iframe.className = "h-full w-full border-0 bg-white";
     opts.previewContainer.replaceChildren(iframe);
   } else {
     iframe.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
     document.body.appendChild(iframe);
   }
-  iframe.srcdoc = runtime === "dom" ? domRuntimeDocument(opts.html ?? "", !!opts.dark) : jsRuntimeDocument();
+  iframe.srcdoc =
+    runtime === "web" ? webRuntimeDocument(opts.html ?? "") : runtime === "dom" ? domRuntimeDocument(opts.html ?? "", !!opts.dark) : jsRuntimeDocument();
 
   const logs: LogEntry[] = [];
   let settled = false;
@@ -147,7 +178,7 @@ export function runInSandbox(opts: RunOptions): RunHandle {
       if (!settled) logs.push(msg.log);
       opts.onLog?.(msg.log);
     } else if (msg.type === "done" && msg.result) {
-      finish({ ...msg.result, durationMs: Math.round(performance.now() - started) }, runtime === "dom");
+      finish({ ...msg.result, durationMs: Math.round(performance.now() - started) }, visible);
     } else if (msg.type === "fatal") {
       finish({ logs, error: msg.error ?? "Sandbox error", errorLine: null, syntaxError: false, tests: [], durationMs: 0 });
     }

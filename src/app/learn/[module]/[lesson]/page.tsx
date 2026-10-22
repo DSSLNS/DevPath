@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock, ExternalLink } from "lucide-react";
-import { adjacentLessons, getLesson, getLessonRef, lessonUrl, modules, type QuestionRef } from "@/content";
+import { adjacentLessons, getLesson, getLessonRef, lessonUrl, modules, technologyForModule, type QuestionRef } from "@/content";
 import { renderInline } from "@/lib/markdown";
 import { Blocks } from "@/components/content/blocks";
 import { CodeBlockStatic } from "@/components/content/code-block-static";
@@ -10,6 +10,7 @@ import { CodeRunner } from "@/components/editor/code-runner";
 import { ExerciseCard } from "@/components/exercises/exercise-card";
 import { QuizRunner } from "@/components/quiz/quiz-runner";
 import { LessonTracker } from "@/components/lesson/lesson-tracker";
+import { ActiveTimeTracker } from "@/components/lesson/active-time-tracker";
 import { BookmarkButton } from "@/components/lesson/bookmark-button";
 import { CompletionStatus } from "@/components/lesson/completion-status";
 import { CompletionPanel } from "@/components/lesson/completion-panel";
@@ -37,29 +38,44 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
   const quizQuestions: QuestionRef[] = lesson.quiz.filter((q) => GRADABLE.has(q.type)).map((exercise) => ({ exercise, lessonId: lesson.id, moduleId: mod.id }));
   const ungradedQuiz = lesson.quiz.filter((q) => !GRADABLE.has(q.type));
 
+  const tech = technologyForModule(mod.id);
+  // HTML and CSS lessons show markup or stylesheets in their mistake examples; everything else is JavaScript.
+  const webLesson = !lesson.tech.includes("javascript") && (lesson.tech.includes("html") || lesson.tech.includes("css"));
+  const mistakeLanguage = (code: string) => (!webLesson ? "js" : code.trimStart().startsWith("<") ? "html" : "css");
   const toc = [
     { id: "introduction", title: "Introduction" },
     ...lesson.sections.map((s) => ({ id: s.id, title: s.title })),
     { id: "playground", title: "Try it yourself" },
+    ...(lesson.bestPractices?.length ? [{ id: "best-practices", title: "Best practices" }] : []),
     { id: "common-mistakes", title: "Common mistakes" },
     { id: "debugging", title: "Debugging tips" },
+    { id: "summary", title: lesson.cheatSheet?.length ? "Quick revision and cheat sheet" : "Quick revision" },
     { id: "practice", title: "Practice" },
-    { id: "quiz", title: "Quiz" },
-    { id: "summary", title: "Summary" },
+    { id: "quiz", title: "End-of-lesson assessment" },
+    { id: "further-reading", title: "Related and further reading" },
     { id: "complete", title: "Complete lesson" },
   ];
 
   return (
     <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_220px] xl:gap-10">
       <LessonTracker lessonId={lesson.id} sectionIds={toc.map((t) => t.id)} />
+      <ActiveTimeTracker lessonId={lesson.id} />
       <article className="min-w-0 max-w-3xl">
         <nav aria-label="Breadcrumb" className="mb-3 text-xs text-subtle">
-          <Link href="/learn" className="hover:text-fg">
+          <Link href="/courses" className="hover:text-fg">
             Learn
           </Link>{" "}
           /{" "}
+          {tech && (
+            <>
+              <Link href={`/courses/${tech.id}`} className="hover:text-fg">
+                {tech.name}
+              </Link>{" "}
+              /{" "}
+            </>
+          )}
           <Link href={`/learn/${mod.slug}`} className="hover:text-fg">
-            Module {mod.order}: {mod.title}
+            {mod.title}
           </Link>
         </nav>
         <header className="mb-6 border-b border-border pb-5">
@@ -155,6 +171,19 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           <CodeRunner examples={lesson.examples} acceptTryIt title="Lesson playground" />
         </section>
 
+        {lesson.bestPractices && lesson.bestPractices.length > 0 && (
+          <section id="best-practices" aria-labelledby="best-practices-h" className="mt-10 scroll-mt-20">
+            <h2 id="best-practices-h" className="mb-2 text-xl font-semibold tracking-tight">
+              Best practices
+            </h2>
+            <ul className="list-disc space-y-1.5 pl-6 text-[15px]">
+              {lesson.bestPractices.map((b) => (
+                <li key={b}>{renderInline(b)}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         <section id="common-mistakes" aria-labelledby="mistakes-h" className="mt-10 scroll-mt-20">
           <h2 id="mistakes-h" className="mb-3 text-xl font-semibold tracking-tight">
             Common mistakes
@@ -166,8 +195,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
                 <p className="mt-1 text-sm text-fg/90">{renderInline(m.explanation)}</p>
                 {(m.wrong || m.right) && (
                   <div className="mt-2 grid gap-3 md:grid-cols-2">
-                    {m.wrong && <CodeBlockStatic code={m.wrong} title="✗ Avoid" compact />}
-                    {m.right && <CodeBlockStatic code={m.right} title="✓ Prefer" compact />}
+                    {m.wrong && <CodeBlockStatic code={m.wrong} language={mistakeLanguage(m.wrong)} title="✗ Avoid" compact />}
+                    {m.right && <CodeBlockStatic code={m.right} language={mistakeLanguage(m.right)} title="✓ Prefer" compact />}
                   </div>
                 )}
               </div>
@@ -186,6 +215,40 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           </ul>
         </section>
 
+        <section id="summary" aria-labelledby="summary-h" className="mt-10 scroll-mt-20">
+          <h2 id="summary-h" className="mb-2 text-xl font-semibold tracking-tight">
+            Quick revision
+          </h2>
+          <ul className="list-disc space-y-1.5 pl-6 text-[15px]">
+            {lesson.keyPoints.map((k) => (
+              <li key={k}>{renderInline(k)}</li>
+            ))}
+          </ul>
+          {lesson.cheatSheet && lesson.cheatSheet.length > 0 && (
+            <div className="mt-5 overflow-x-auto rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <caption className="border-b border-border bg-surface-2 px-3 py-2 text-left text-xs font-semibold tracking-wide text-subtle uppercase">Cheat sheet</caption>
+                <thead className="sr-only">
+                  <tr>
+                    <th scope="col">Syntax or concept</th>
+                    <th scope="col">Meaning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lesson.cheatSheet.map((row) => (
+                    <tr key={row.item} className="border-b border-border last:border-0">
+                      <th scope="row" className="w-2/5 bg-surface px-3 py-2 text-left align-top font-normal">
+                        {renderInline(row.item)}
+                      </th>
+                      <td className="px-3 py-2 align-top text-fg/90">{renderInline(row.meaning)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
         <section id="practice" aria-labelledby="practice-h" className="mt-10 scroll-mt-20">
           <h2 id="practice-h" className="mb-1 text-xl font-semibold tracking-tight">
             Practice
@@ -201,9 +264,9 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
 
         <section id="quiz" aria-labelledby="quiz-h" className="mt-10 scroll-mt-20">
           <h2 id="quiz-h" className="mb-1 text-xl font-semibold tracking-tight">
-            Quiz
+            End-of-lesson assessment
           </h2>
-          <p className="mb-4 text-sm text-muted">Check your understanding. Your score is saved and feeds into mastery and revision.</p>
+          <p className="mb-4 text-sm text-muted">Check your understanding. Every answer comes with an explanation. Your score is saved and feeds into mastery and revision, and you can retake it any time.</p>
           <QuizRunner quizId={`lesson:${lesson.id}`} kind="lesson" title={`Quiz: ${lesson.title}`} questions={quizQuestions} />
           {ungradedQuiz.length > 0 && (
             <div className="mt-4 space-y-4">
@@ -214,16 +277,11 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           )}
         </section>
 
-        <section id="summary" aria-labelledby="summary-h" className="mt-10 scroll-mt-20">
-          <h2 id="summary-h" className="mb-2 text-xl font-semibold tracking-tight">
-            Summary
+        <section id="further-reading" aria-labelledby="further-reading-h" className="mt-10 scroll-mt-20">
+          <h2 id="further-reading-h" className="mb-3 text-xl font-semibold tracking-tight">
+            Related and further reading
           </h2>
-          <ul className="list-disc space-y-1.5 pl-6 text-[15px]">
-            {lesson.keyPoints.map((k) => (
-              <li key={k}>{renderInline(k)}</li>
-            ))}
-          </ul>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {lesson.related.length > 0 && (
               <div>
                 <h3 className="mb-1.5 text-sm font-semibold">Related lessons</h3>
@@ -262,7 +320,7 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
         </section>
 
         <div className="mt-10">
-          <CompletionPanel lessonId={lesson.id} objectives={lesson.objectives} nextLessonId={next?.id} />
+          <CompletionPanel lessonId={lesson.id} objectives={lesson.objectives} criteria={lesson.completionCriteria} nextLessonId={next?.id} />
         </div>
         <LessonNav prev={prev?.id} next={next?.id} className="mt-6" />
       </article>

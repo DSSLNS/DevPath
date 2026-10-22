@@ -1,4 +1,5 @@
 import type { ChallengeTopic, Difficulty, ExerciseType, KbCategory, LearningPath, Tech } from "@/content/types";
+import type { PracticeMode, TechCategory, TechCategoryId } from "@/content/technologies/types";
 
 export interface CatalogLesson {
   id: string;
@@ -38,7 +39,34 @@ export interface CatalogQuestionMeta {
   difficulty: Difficulty;
 }
 
+/** "available": has published lessons. "notes": reference notes only. "planned": outline only. */
+export type TechStatus = "available" | "notes" | "planned";
+
+export interface CatalogTechnology {
+  id: string;
+  name: string;
+  category: TechCategoryId;
+  badge: string;
+  description: string;
+  level: Difficulty;
+  status: TechStatus;
+  moduleIds: string[];
+  /** Published lesson ids in course order. */
+  lessonIds: string[];
+  plannedLessons: number;
+  totalDays: number;
+  totalMinutes: number;
+  /** Duration includes estimates for lessons that are not written yet. */
+  estimated: boolean;
+  kbCategory?: KbCategory;
+  kbNotes: number;
+  practiceMode: PracticeMode;
+  prerequisites: string[];
+}
+
 export interface Catalog {
+  technologies: CatalogTechnology[];
+  categories: TechCategory[];
   modules: CatalogModule[];
   paths: LearningPath[];
   kb: { id: string; slug: string; title: string; category: KbCategory; tech: Tech[]; difficulty: Difficulty; summary: string; tags: string[] }[];

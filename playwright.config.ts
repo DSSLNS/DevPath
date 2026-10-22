@@ -18,10 +18,17 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile\.spec/ },
   ],
   webServer: {
-    // Run against the production build: `npm run build` first.
-    command: `npx next start -p ${PORT}`,
+    // Run against the production build: `npm run build` first. Uses a throwaway SQLite database.
+    command: `rm -f .data/e2e.db* .data/e2e-mail.log && npm run db:migrate && npx next start -p ${PORT}`,
     url: `http://localhost:${PORT}`,
-    reuseExistingServer: !process.env.CI,
+    env: {
+      SQLITE_PATH: ".data/e2e.db",
+      BETTER_AUTH_SECRET: "e2e-only-secret-not-for-production-0123456789",
+      BETTER_AUTH_URL: `http://localhost:${PORT}`,
+      DEVPATH_EMAIL_LOG: ".data/e2e-mail.log",
+      DEVPATH_RATE_LIMIT: "off",
+    },
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });

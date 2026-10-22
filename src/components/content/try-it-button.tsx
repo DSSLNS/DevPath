@@ -1,15 +1,16 @@
 "use client";
 
 import { Play } from "lucide-react";
+import type { Runtime } from "@/content/types";
 
 export const LOAD_CODE_EVENT = "jsa:load-code";
 export interface LoadCodeDetail {
   code: string;
-  runtime: "js" | "dom";
+  runtime: Runtime;
 }
 
 /** Sends a code snippet to the page's playground (if any) and scrolls to it. */
-export function TryItButton({ code, runtime }: { code: string; runtime: "js" | "dom" }) {
+export function TryItButton({ code, runtime }: { code: string; runtime: Runtime }) {
   return (
     <button
       type="button"

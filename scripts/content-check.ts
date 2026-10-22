@@ -36,6 +36,32 @@ const structureOnly = has("--structure-only");
 // Cross-references are checked against the manifest so partially-written content can still be validated.
 const lessonIds = new Set(allManifestLessonIds);
 
+/** Internal links in content must point at pages that exist (planned lessons have no page yet). */
+function checkInternalLinks(issues: ContentIssue[]) {
+  const pages = new Set<string>(["/learn", "/courses", "/practice", "/projects", "/e2e", "/quizzes"]);
+  for (const m of modules) {
+    pages.add(`/learn/${m.slug}`);
+    for (const l of m.lessons) pages.add(`/learn/${m.slug}/${l.slug}`);
+  }
+  for (const n of kbNotes) pages.add(`/e2e/${n.slug}`);
+  for (const c of challenges) pages.add(`/practice/${c.slug}`);
+  for (const p of projects) pages.add(`/projects/${p.slug}`);
+  const sources: [string, unknown][] = [
+    ...modules.flatMap((m) => m.lessons.map((l) => [`lesson ${l.id}`, l] as [string, unknown])),
+    ...kbNotes.map((n) => [`kb ${n.id}`, n] as [string, unknown]),
+    ...challenges.map((c) => [`challenge ${c.id}`, c] as [string, unknown]),
+    ...projects.map((p) => [`project ${p.id}`, p] as [string, unknown]),
+  ];
+  for (const [where, item] of sources) {
+    for (const m of JSON.stringify(item).matchAll(/\]\((\/[^)#\s]*)(#[^)]*)?\)/g)) {
+      const path = m[1].replace(/\/$/, "") || "/";
+      if (path.startsWith("/learn/") || path.startsWith("/e2e/") || path.startsWith("/practice/") || path.startsWith("/projects/")) {
+        if (!pages.has(path)) issues.push({ where, message: `Internal link to a page that does not exist (yet): ${path}` });
+      }
+    }
+  }
+}
+
 async function main() {
   const issues: ContentIssue[] = [];
   const selectedModules = modules.filter((m) => !scoped || moduleFilter.includes(m.id));
@@ -59,6 +85,7 @@ async function main() {
   if (doProjects) validateProjects(projects, lessonIds, issues);
   if (doGlossary) validateGlossary(glossary, lessonIds, issues);
   checkGlobalIds(modules, kbNotes, challenges, projects, glossary, issues);
+  checkInternalLinks(issues);
 
   // Executable checks
   if (!structureOnly) {

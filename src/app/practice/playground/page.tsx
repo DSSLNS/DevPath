@@ -3,6 +3,7 @@ import { modules } from "@/content";
 import type { CodeExample } from "@/content/types";
 import { PageHeader } from "@/components/ui/card";
 import { PlaygroundClient } from "@/components/practice/playground-client";
+import { ActiveTimeTracker } from "@/components/lesson/active-time-tracker";
 
 export const metadata: Metadata = { title: "JavaScript Playground" };
 
@@ -24,6 +25,7 @@ export default function PlaygroundPage() {
   );
   return (
     <div>
+      <ActiveTimeTracker />
       <PageHeader
         title="JavaScript Playground"
         description="An isolated sandbox for experiments. Code can't reach the network, cookies or storage, and long-running code is stopped automatically. Your draft is saved in this browser."

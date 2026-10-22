@@ -78,7 +78,7 @@ export const whatIsDom: Lesson = {
           kind: "callout",
           tone: "tip",
           title: "DOM vs JavaScript",
-          text: "The DOM is a **Web API** provided by the browser. The JavaScript language (ECMAScript) has no idea what a button is. That is why `document` exists in the browser but not in Node.js, and why JS Academy runs DOM code in a separate sandbox.",
+          text: "The DOM is a **Web API** provided by the browser. The JavaScript language (ECMAScript) has no idea what a button is. That is why `document` exists in the browser but not in Node.js, and why DevPath runs DOM code in a separate sandbox.",
         },
       ],
     },

@@ -1,4 +1,4 @@
-# Code execution and data security
+# Code execution, accounts and data security
 
 ## Threat model
 
@@ -13,7 +13,8 @@ Learners run arbitrary JavaScript, and that code may be pasted from elsewhere. I
 3. **Worker isolation for the JS runtime.** Learner code runs in a Web Worker started by the sandboxed iframe. The iframe itself never runs learner code, so an infinite loop cannot block it.
 4. **Time limit.** The parent page destroys the iframe and its worker when the configurable limit (default 5 s) passes without a result. An E2E test verifies that `while (true) {}` is stopped and the app stays responsive.
 5. **Output limits.** Output is capped at 500 log lines, and each line at 10,000 characters.
-6. **No eval in the app context.** `new Function` and `eval` run only inside the sandbox. Messages from the sandbox are accepted only when `event.source` is that run's iframe.
+6. **HTML/CSS pages (`web` runtime)** use the same opaque-origin iframe. The CSP is injected first in `<head>`: no network, inline styles and scripts only, and `data:` images. A learner page can only add further CSP restrictions, never loosen them.
+7. **No eval in the app context.** `new Function` and `eval` run only inside the sandbox. Messages from the sandbox are accepted only when `event.source` is that run's iframe.
 
 ### Known limitations
 
@@ -26,7 +27,24 @@ Learners run arbitrary JavaScript, and that code may be pasted from elsewhere. I
 - Personal notes use a small Markdown renderer (`src/lib/markdown.tsx`) that outputs React elements only. Raw HTML is shown as text, and links are limited to `https:`, `http:`, `mailto:` and same-site paths. `javascript:` and protocol-relative URLs are dropped. Unit and E2E tests cover this.
 - No component uses `dangerouslySetInnerHTML`, apart from the inline script that applies the theme before first paint. That script is a constant.
 
+## Accounts and authentication
+
+- **Library:** passwords and sessions are handled by Better Auth, not custom cryptography.
+  - Passwords are hashed with scrypt and never stored or logged in plain text.
+  - Sessions are httpOnly, SameSite=Lax cookies. No tokens are exposed to client JavaScript or stored in browser storage.
+- **Password rules:** at least 10 characters with a letter and a number, checked on the client. The server enforces a 10–128 character limit.
+- **Sign-in protection:**
+  - Login errors don't reveal which field was wrong.
+  - Password-reset requests always show the same message, whether or not the account exists.
+- **Password reset:** reset tokens expire after one hour and are single use. A successful reset revokes the user's other sessions, and so does a password change.
+- **Rate limiting:** Better Auth's rate limiting is on in production. `DEVPATH_RATE_LIMIT=off` exists only for the E2E suite.
+- **Redirects:** post-login redirects accept same-site paths only (`safeNext`).
+- **Authorization:** `/api/progress` derives the user id from the verified session. Request bodies never choose whose data is read or written. Writes are validated with the shared schema, limited to 1 MB, and rejected when the `Origin` header is cross-site.
+- **Secrets:** server secrets (`BETTER_AUTH_SECRET`, `DATABASE_URL`, `RESEND_API_KEY`) are read only in `src/lib/server/*`, which only route handlers and server components import. None use the `NEXT_PUBLIC_` prefix.
+- **Not yet implemented:** email verification, multi-factor authentication and account deletion.
+
 ## Stored data
 
-- All data lives in `localStorage` under `jsacademy:state:v1`. It is validated on load: invalid entries are dropped and the learner is told. Saves that fail, for example because storage is full or blocked, produce a visible warning instead of failing silently.
+- Signed-in learners' progress is stored on the server and kept in memory in the browser. It is not written to localStorage, and logging out reloads the app.
+- Guest data lives in `localStorage` under `jsacademy:state:v1`. The key name is kept so existing learners keep their progress. It is validated on load: invalid entries are dropped and the learner is told. Saves that fail, for example because storage is full or blocked, produce a visible warning instead of failing silently.
 - No credentials, tokens or payment data are stored. Payment content in the knowledge base uses only providers' documented **test** card numbers.

@@ -19,7 +19,7 @@ function newSeed() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-const MODES: { kind: Exclude<QuizKind, "lesson" | "module" | "revision">; title: string; description: string; defaults: { count: number; minutes: number } }[] = [
+const MODES: { kind: Exclude<QuizKind, "lesson" | "module" | "day" | "revision">; title: string; description: string; defaults: { count: number; minutes: number } }[] = [
   { kind: "mixed", title: "Mixed practice", description: "Questions drawn from lessons you have completed.", defaults: { count: 10, minutes: 0 } },
   { kind: "challenge", title: "Challenge mode", description: "Harder questions that combine several concepts, from modules you have completed.", defaults: { count: 10, minutes: 15 } },
   { kind: "interview", title: "Mock interview", description: "Output prediction, debugging and explanation questions in interview style.", defaults: { count: 12, minutes: 20 } },

@@ -120,6 +120,7 @@ function ExerciseCardInner({ exercise: ex, index, label, restore }: { exercise: 
             initialCode={(answer.value as string) ?? ""}
             resetCode={ex.type === "code" ? ex.starter : ex.code}
             tests={ex.tests}
+            runtime={ex.runtime ?? "js"}
             runLabel="Run tests"
             onResult={onCodeResult}
             editorMinHeight={140}

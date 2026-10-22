@@ -1,5 +1,5 @@
 /** Server-only: derive the slim catalog from bundled content. */
-import { challenges, glossary, kbNotes, learningPaths, modules, projects, questionBank } from "@/content";
+import { challenges, getCourse, glossary, kbNotes, learningPaths, modules, projects, questionBank, techCategories, technologies } from "@/content";
 import { curriculumManifest } from "@/content/curriculum/manifest";
 import type { Catalog } from "./types";
 
@@ -8,6 +8,31 @@ let cached: Catalog | null = null;
 export function getCatalog(): Catalog {
   if (cached) return cached;
   cached = {
+    categories: techCategories,
+    technologies: technologies.map((t) => {
+      const course = getCourse(t);
+      const lessonIds = t.moduleIds.flatMap((id) => modules.find((m) => m.id === id)?.lessons.map((l) => l.id) ?? []);
+      const kbCount = t.kbCategory ? kbNotes.filter((n) => n.category === t.kbCategory).length : 0;
+      return {
+        id: t.id,
+        name: t.name,
+        category: t.category,
+        badge: t.badge,
+        description: t.description,
+        level: t.level,
+        status: lessonIds.length ? "available" : kbCount ? "notes" : "planned",
+        moduleIds: t.moduleIds,
+        lessonIds,
+        plannedLessons: course.plannedLessons,
+        totalDays: course.totalDays,
+        totalMinutes: course.totalMinutes,
+        estimated: course.estimated,
+        kbCategory: t.kbCategory,
+        kbNotes: kbCount,
+        practiceMode: t.practice.mode,
+        prerequisites: t.prerequisites,
+      };
+    }),
     modules: modules.map((m) => {
       const manifest = curriculumManifest.find((x) => x.id === m.id);
       const written = new Set(m.lessons.map((l) => l.slug));

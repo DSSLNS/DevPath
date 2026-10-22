@@ -1,4 +1,4 @@
-# JS Academy content guide
+# DevPath content guide
 
 All learning content is typed TypeScript data in `src/content/`. Types live in
 [`src/content/types.ts`](../src/content/types.ts); read it first. Nothing is
@@ -78,6 +78,42 @@ The in-app sandbox (and the checker) run JavaScript in an isolated worker with *
   return the HTML string / class list", or use mcq, predict-output (non-DOM code), match and order exercises.
 - `fill-blank` templates use `___` (three underscores) for each blank; `blanks[i].answers` lists accepted answers
   (compared ignoring whitespace).
+
+## Full lesson format (required for every module after m16)
+
+Lessons in new modules (HTML `m17`, CSS `m18` and later) must also include:
+
+- `bestPractices` (≥ 2): recommended habits, with essential beginner practice first and advanced advice labelled as such.
+- `cheatSheet` (≥ 3 rows of `{ item, meaning }`): the syntax, elements, properties or commands from the lesson.
+- `completionCriteria` (≥ 2): what the learner can explain or build after the lesson, phrased as "You can …".
+- At least **4 different exercise types** across `exercises`, `quiz` and `challenge`.
+
+The lesson page renders these sections in this order: introduction, objectives and prerequisites, key terms, teaching `sections` (explanation → syntax → examples → walkthrough → real-world), playground, best practices, common mistakes, debugging, quick revision (key points and cheat sheet), practice, end-of-lesson assessment (quiz), then completion criteria. Visual explanations use `diagram` and `table` blocks.
+
+Check a single lesson file before registering it:
+
+```bash
+npm run content:lesson -- src/content/curriculum/m17-html/links.ts
+```
+
+## HTML and CSS: the `web` runtime
+
+HTML and CSS code runs with `runtime: "web"`. The code *is* the page: a complete HTML document, usually with a `<style>` element. It renders in the same opaque-origin, no-network sandbox as JavaScript, and the preview shows the result.
+
+- **Code blocks:** `{ kind: "code", language: "html", runtime: "web", runnable: true, code: "<!doctype html>…" }`. Never add `output` to HTML or CSS blocks. For CSS-only snippets that aren't a full page, use `language: "css"` without `runnable`.
+- **Playground examples:** `{ id, title, runtime: "web", code: "<!doctype html>…" }`.
+- **Exercises:** `type: "code"` or `"find-bug"` with `runtime: "web"`. The learner edits a whole page; `starter`/`code` and `solution` are complete HTML documents. `tests` are JavaScript that run **against the rendered document** using `document`, `getComputedStyle` and `assert`. The checker verifies them in jsdom: the solution must pass, and the starter or buggy page must fail at least one test.
+  - Learner `<script>` elements don't run during checking. Test markup and styles only.
+  - Query the DOM the way a reviewer would: `document.querySelector("main h1")`, `document.querySelectorAll("nav a").length`, `el.getAttribute("href")`, `document.documentElement.lang`, `document.title`.
+  - `getComputedStyle` applies the cascade, specificity, `!important` and inheritance. Computed values are normalised:
+    - colours are `rgb(r, g, b)`, so `red` reads as `rgb(255, 0, 0)`
+    - `font-weight: bold` reads as `"700"`
+    - keywords read back as keywords (`display`, `position`, `flex-direction`, `justify-content`, `box-sizing`, …)
+    - lengths written in `px` read back in `px`
+  - Don't assert on `auto` margins, percentages, `em`/`rem` values or layout measurements such as `offsetWidth`. jsdom does no layout, so those differ from browsers.
+  - jsdom ignores every rule whose selector list contains a pseudo-element. For example, `*, *::before, *::after { box-sizing: border-box }` has no effect in the checker, although browsers apply it. For rules like that, accept either the computed value or a matching rule found through `document.styleSheets`.
+  - Give tests learner-friendly names and failure messages: `assert.ok(img.alt.trim(), "Every image needs a non-empty alt attribute")`.
+- `predict-output` runs JavaScript, so don't use it in HTML or CSS lessons. Use `mcq`, `multi-select`, `true-false`, `fill-blank`, `match`, `order`, `short-answer`, and `code`/`find-bug` with the web runtime.
 
 ## Quality bar
 

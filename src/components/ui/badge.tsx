@@ -32,6 +32,8 @@ const techLabel: Record<Tech, string> = {
   node: "Node.js",
   cypress: "Cypress",
   playwright: "Playwright",
+  html: "HTML",
+  css: "CSS",
 };
 export function TechBadges({ tech }: { tech: Tech[] }) {
   return (

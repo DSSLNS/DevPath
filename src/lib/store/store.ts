@@ -376,6 +376,23 @@ export class LearnerStore {
     });
   }
 
+  // ------------------------------------------------------------- time
+  /** Adds active learning time to today and (optionally) to a lesson. Called by the activity tracker. */
+  addActiveTime(seconds: number, lessonId?: string) {
+    const secs = Math.round(seconds);
+    if (secs <= 0) return;
+    const day = todayKey();
+    this.update((s) => {
+      const timeLog = { ...s.timeLog, [day]: Math.min(86400, (s.timeLog[day] ?? 0) + secs) };
+      const lesson = lessonId ? s.lessons[lessonId] : undefined;
+      return {
+        ...s,
+        timeLog,
+        lessons: lesson && lessonId ? { ...s.lessons, [lessonId]: { ...lesson, activeSeconds: (lesson.activeSeconds ?? 0) + secs } } : s.lessons,
+      };
+    });
+  }
+
   // ------------------------------------------------------------- misc
   visit(item: Omit<RecentItem, "at">) {
     this.update((s) => ({ ...s, recent: pushRecent(s.recent, { ...item, at: new Date().toISOString() }) }), { track: false });
@@ -392,6 +409,13 @@ export class LearnerStore {
 
   updateSettings(patch: Partial<Settings>) {
     this.update((s) => ({ ...s, settings: { ...s.settings, ...patch } }), { track: false });
+  }
+
+  /** Replaces the whole state (server merge or guest import) and persists it. */
+  replaceState(state: PersistedState) {
+    this.state = state;
+    this.persist();
+    this.emit();
   }
 
   exportData() {

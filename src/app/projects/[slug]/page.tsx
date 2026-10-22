@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/ui/card";
 import { BookmarkButton } from "@/components/lesson/bookmark-button";
 import { VisitTracker } from "@/components/kb/visit-tracker";
 import { ProjectChecklist, ProjectCompleteButton, ProjectStepToggle, RevealSolution } from "@/components/projects/project-client";
+import { ActiveTimeTracker } from "@/components/lesson/active-time-tracker";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -34,6 +35,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ slug: 
   return (
     <article className="max-w-3xl">
       <VisitTracker id={p.id} type="project" />
+      <ActiveTimeTracker />
       <nav aria-label="Breadcrumb" className="mb-3 text-xs text-subtle">
         <Link href="/projects" className="hover:text-fg">
           Projects

@@ -144,7 +144,13 @@ export function lessonRequirements(lesson: Lesson): PracticeRequirements {
   return { ...DEFAULT_REQUIREMENTS, ...lesson.requirements };
 }
 
-function checkLesson(lesson: Lesson, mod: Module, allLessonIds: Set<string>, issues: ContentIssue[]) {
+/**
+ * Modules written before best practices, cheat sheets and completion criteria were added to
+ * the lesson format. New modules must include all three; these get them as they are revised.
+ */
+const LEGACY_FORMAT_MODULES = new Set(["m01", "m02", "m03", "m04", "m05", "m06", "m07", "m08", "m09", "m10", "m11", "m12", "m13", "m14", "m15", "m16"]);
+
+export function checkLesson(lesson: Lesson, mod: Module, allLessonIds: Set<string>, issues: ContentIssue[]) {
   const w = `lesson ${lesson.id}`;
   if (lesson.id !== lessonIdFor(mod.slug, lesson.slug))
     issues.push({ where: w, message: `id must be "${lessonIdFor(mod.slug, lesson.slug)}"` });
@@ -186,6 +192,20 @@ function checkLesson(lesson: Lesson, mod: Module, allLessonIds: Set<string>, iss
   if (debugging < req.debugging) issues.push({ where: w, message: `Needs ${req.debugging} debugging exercises (has ${debugging})` });
   if (mcq < req.quizMcq) issues.push({ where: w, message: `Quiz needs ${req.quizMcq} MCQs (has ${mcq})` });
   [...lesson.exercises, ...lesson.quiz, lesson.challenge].forEach((e) => checkExercise(e, w, issues));
+
+  const fullFormat = !LEGACY_FORMAT_MODULES.has(mod.id);
+  if ((fullFormat || lesson.bestPractices) && (lesson.bestPractices?.length ?? 0) < 2)
+    issues.push({ where: w, message: "bestPractices needs at least 2 items" });
+  if ((fullFormat || lesson.cheatSheet) && (lesson.cheatSheet?.length ?? 0) < 3)
+    issues.push({ where: w, message: "cheatSheet needs at least 3 rows" });
+  if ((fullFormat || lesson.completionCriteria) && (lesson.completionCriteria?.length ?? 0) < 2)
+    issues.push({ where: w, message: "completionCriteria needs at least 2 items" });
+  lesson.bestPractices?.forEach((t) => checkInline(t, w, issues));
+  lesson.completionCriteria?.forEach((t) => checkInline(t, w, issues));
+  if (fullFormat) {
+    const types = new Set([...lesson.exercises, ...lesson.quiz, lesson.challenge].map((e) => e.type));
+    if (types.size < 4) issues.push({ where: w, message: `Use at least 4 different exercise types across practice, quiz and challenge (has ${types.size})` });
+  }
 }
 
 export function validateCurriculum(modules: Module[], issues: ContentIssue[] = [], strict = false) {

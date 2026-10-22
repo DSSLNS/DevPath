@@ -1,6 +1,6 @@
 /** Generates src/generated/routes.json: every valid dynamic content route, used by src/proxy.ts to return real 404s. */
 import { mkdirSync, writeFileSync } from "node:fs";
-import { challenges, kbNotes, modules, projects } from "@/content";
+import { challenges, getCourse, getLessonRef, kbNotes, modules, projects, technologies } from "@/content";
 
 const routes = [
   ...modules.map((m) => `/learn/${m.slug}`),
@@ -8,6 +8,13 @@ const routes = [
   ...kbNotes.map((n) => `/e2e/${n.slug}`),
   ...challenges.map((c) => `/practice/${c.slug}`),
   ...projects.map((p) => `/projects/${p.slug}`),
+  ...technologies.map((t) => `/courses/${t.id}`),
+  ...technologies.flatMap((t) =>
+    getCourse(t)
+      .weeks.flatMap((w) => w.days)
+      .filter((d) => d.lessonIds.some((id) => getLessonRef(id)))
+      .map((d) => `/courses/${t.id}/day/${d.day}`),
+  ),
 ].sort();
 
 mkdirSync("src/generated", { recursive: true });

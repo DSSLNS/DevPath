@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
+import { GoalPicker, goalLabel } from "@/components/account/account-dialogs";
 
 export function SettingsView() {
   const s = useLearnerState();
@@ -50,6 +51,28 @@ export function SettingsView() {
             </select>
           </div>
           <p className="px-4 py-3 text-xs text-subtle">Animations follow your operating system&apos;s “reduce motion” setting.</p>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Daily learning goal"
+          description={`${goalLabel(s.settings.dailyGoalMinutes)}. Optional: goals never lock content, and missed days aren't penalised.`}
+        />
+        <div className="space-y-3 p-4">
+          <GoalPicker
+            key={s.settings.dailyGoalMinutes}
+            value={s.settings.dailyGoalMinutes}
+            onChange={(m) => {
+              set({ dailyGoalMinutes: m, goalPromptSeen: true });
+              toast(`Daily goal set: ${goalLabel(m)}.`, "success");
+            }}
+          />
+          {s.settings.dailyGoalMinutes > 0 && (
+            <Button variant="ghost" size="sm" onClick={() => set({ dailyGoalMinutes: 0, goalPromptSeen: true })} data-testid="goal-off">
+              Turn off my daily goal
+            </Button>
+          )}
         </div>
       </Card>
 
@@ -137,7 +160,7 @@ export function SettingsView() {
               const file = e.target.files?.[0];
               e.target.value = "";
               if (!file) return;
-              if (file.size > 5_000_000) return toast("That file is too large to be a JS Academy backup.", "error");
+              if (file.size > 5_000_000) return toast("That file is too large to be a DevPath backup.", "error");
               const result = learnerStore.importData(await file.text());
               if (!result.ok) toast("That file isn't a valid JS Academy backup. Nothing was changed.", "error");
               else toast(result.recovered ? "Imported. Some invalid entries were skipped." : "Backup imported.", "success");

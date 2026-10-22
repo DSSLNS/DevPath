@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/card";
 import { renderInline } from "@/lib/markdown";
 import { ChallengeWorkspace } from "@/components/practice/challenge-workspace";
 import { BookmarkButton } from "@/components/lesson/bookmark-button";
+import { ActiveTimeTracker } from "@/components/lesson/active-time-tracker";
 
 export function generateStaticParams() {
   return challenges.map((c) => ({ slug: c.slug }));
@@ -23,6 +24,7 @@ export default async function ChallengePage({ params }: { params: Promise<{ slug
   if (!c) notFound();
   return (
     <div className="max-w-5xl">
+      <ActiveTimeTracker />
       <nav aria-label="Breadcrumb" className="mb-3 text-xs text-subtle">
         <Link href="/practice" className="hover:text-fg">
           Practice Lab

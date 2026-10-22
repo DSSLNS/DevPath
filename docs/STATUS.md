@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated 2026-10-21. Key: ✅ complete · 🟡 partial · ⬜ not yet implemented.
+Last updated 2026-10-22. Key: ✅ complete · 🟡 partial · ⬜ not yet implemented.
 
 ## Application features
 
@@ -21,7 +21,15 @@ Last updated 2026-10-21. Key: ✅ complete · 🟡 partial · ⬜ not yet implem
 | Progress, mastery and revision | ✅ | Transparent rules, topic breakdown, optional achievements and streak, revision queue |
 | Settings and data | ✅ | Theme, editor font, mastery threshold, time limit, path, unlock-all, export/import, reset with confirmation |
 | Accessibility | 🟡 | Semantic landmarks, labels, focus styles, keyboard access, ARIA live regions and accessible dialogs are in place. No formal WCAG audit with assistive technology has been done yet. |
-| Accounts and server database | ⬜ | Out of MVP scope. A storage adapter interface is ready (see ARCHITECTURE.md). |
+| Technology catalog | ✅ | 51 technologies in 7 categories (4 with lessons, 4 with reference notes only, 43 planned), with search, category, level and availability filters, and four sort orders. Planned technologies show their outline and are labelled as planned. |
+| Course roadmaps and day pages | ✅ | Day-by-day plans with weekly reviews, end-of-day assessments built only from that day's lessons, coding tasks and a day summary |
+| Full lesson format | ✅ | Best practices, quick revision and cheat sheet, end-of-lesson assessment and completion criteria. Required for new modules; legacy JS lessons still need these fields added. |
+| HTML/CSS practice (`web` runtime) | ✅ | Sandboxed preview. Exercises are auto-tested in the app and verified in jsdom by the checker. |
+| Accounts | ✅ | Sign up, log in, log out, forgot and reset password, change password, edit name, protected account page. Email verification, MFA and account deletion are not built yet. |
+| Server progress sync | ✅ | Per-user validated state with revisions, cross-device conflict merge, offline retry, and opt-in guest-progress import |
+| Daily goal and active time | ✅ | Optional, dismissible popup asked once. Change or turn off the goal in Account or Settings. Time counts only while you're active. |
+| Learning paths | ✅ | Frontend, Backend, Full-Stack and Test Automation career paths, plus the 3 JavaScript tracks |
+| Server-side code execution (Node.js, SQL, Cypress, Playwright) | ⬜ | Not built. These technologies are labelled "guided" and no code is claimed to run. A safe implementation needs an isolated execution service such as microVM sandboxes. |
 
 ## Content
 
@@ -45,7 +53,21 @@ Every published lesson passes the automated checker: full structure, verified ou
 | 14 Browser Networking and APIs | 2 / 14 |
 | 15 TypeScript Foundations | **0** / 13 ⬜ |
 | 16 React Fundamentals | 4 / 22 |
-| **Total** | **43 / 239** 🟡 |
+| 17 HTML Foundations | 4 / 12 (Days 1–2 complete) |
+| 18 CSS Foundations | 4 / 12 (Days 1–2 complete) |
+| **Total** | **51 / 263** 🟡 |
+
+### By technology
+
+| Technology | Status | Published lessons |
+| --- | --- | --- |
+| HTML | 🟡 Days 1–2 complete | What HTML Is, Document Structure, Headings and Text, Links and Navigation |
+| CSS | 🟡 Days 1–2 complete | What CSS Is, Selectors, Cascade and Specificity, Box Model |
+| JavaScript | 🟡 39 lessons | See the modules above (m01–m14) |
+| TypeScript | ⬜ planned | 0 / 13 |
+| React | 🟡 4 lessons | Why React, Components, JSX, Props |
+| Cypress, Playwright, Testing fundamentals, E2E testing | 📚 reference notes | 14 Cypress and 14 Playwright notes, plus 10 fundamentals notes shared by the last two. No day-by-day lessons yet. |
+| The other 42 technologies | ⬜ planned | Outline only, clearly labelled as planned |
 
 - **Exercises:** 476 lesson exercises, quiz questions and challenges. 300 of them are auto-gradable and feed assessments.
 - **E2E knowledge base:** 38 notes in 3 of 6 categories (Fundamentals 10, Cypress 14, Playwright 14). These are still missing:

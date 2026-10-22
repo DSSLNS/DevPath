@@ -1,7 +1,7 @@
 /** Branding is configurable here. */
 export const siteConfig = {
-  name: "JS Academy",
-  shortName: "JSA",
+  name: "DevPath",
+  shortName: "DP",
   description:
-    "Learn JavaScript from first principles to professional practice — interactive lessons, exercises, quizzes, and an E2E testing knowledge base for Cypress and Playwright.",
+    "Learn web development step by step: HTML, CSS, JavaScript and beyond, with day-by-day plans, interactive practice, assessments and progress that follows you across devices.",
 };

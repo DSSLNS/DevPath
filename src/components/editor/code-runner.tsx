@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Eraser, Loader2, Play, RotateCcw, Square } from "lucide-react";
-import type { CodeExample, CodeTest } from "@/content/types";
+import type { CodeExample, CodeTest, Runtime } from "@/content/types";
 import { runInSandbox, type RunHandle } from "@/lib/sandbox/browser";
 import type { LogEntry, RunResult } from "@/lib/sandbox/types";
 import { useLearnerState } from "@/lib/store/hooks";
@@ -15,7 +15,7 @@ import { CodeEditor } from "./code-editor";
 export interface CodeRunnerProps {
   examples?: CodeExample[];
   initialCode?: string;
-  runtime?: "js" | "dom";
+  runtime?: Runtime;
   html?: string;
   title?: string;
   /** Listen for "Try it" events from static code blocks on the page. */
@@ -31,6 +31,13 @@ export interface CodeRunnerProps {
   editorMinHeight?: number;
   id?: string;
 }
+
+const RUNTIME_LABEL: Record<Runtime, string> = { js: "JS sandbox", dom: "DOM sandbox", web: "HTML/CSS preview" };
+const RUNTIME_HINT: Record<Runtime, string> = {
+  js: "Runs in an isolated worker (no DOM, network or storage)",
+  dom: "Runs in a sandboxed page with a live preview",
+  web: "Renders your HTML and CSS in a sandboxed page with no network access",
+};
 
 export function CodeRunner({
   examples,
@@ -50,7 +57,7 @@ export function CodeRunner({
   const { settings } = useLearnerState();
   const [exampleId, setExampleId] = useState(examples?.[0]?.id);
   const example = examples?.find((e) => e.id === exampleId);
-  const [runtime, setRuntime] = useState<"js" | "dom">(example?.runtime ?? runtimeProp);
+  const [runtime, setRuntime] = useState<Runtime>(example?.runtime ?? runtimeProp);
   const [html, setHtml] = useState(example?.html ?? htmlProp ?? "");
   const baseCode = example?.code ?? initialCode ?? "";
   const [code, setCode] = useState(initialCode ?? example?.code ?? "");
@@ -71,7 +78,7 @@ export function CodeRunner({
       setExampleId(undefined);
       setCode(d.code);
       setRuntime(d.runtime);
-      if (d.runtime === "js") setHtml("");
+      if (d.runtime !== "dom") setHtml("");
       setLogs([]);
       setResult(null);
     };
@@ -87,10 +94,11 @@ export function CodeRunner({
     setRunning(true);
     const live: LogEntry[] = [];
     const h = runInSandbox({
-      code,
+      // In the web runtime the edited code is the page itself.
+      code: runtime === "web" ? "" : code,
       tests,
       runtime,
-      html,
+      html: runtime === "web" ? code : html,
       timeoutMs: settings.codeTimeoutMs,
       previewContainer: preview.current,
       dark: document.documentElement.dataset.theme === "dark",
@@ -154,11 +162,11 @@ export function CodeRunner({
             </select>
           </label>
         )}
-        <span className="rounded border border-border px-1.5 py-0.5 text-[11px] text-subtle" title={runtime === "dom" ? "Runs in a sandboxed page with a live preview" : "Runs in an isolated worker (no DOM, network or storage)"}>
-          {runtime === "dom" ? "DOM sandbox" : "JS sandbox"}
+        <span className="rounded border border-border px-1.5 py-0.5 text-[11px] text-subtle" title={RUNTIME_HINT[runtime]}>
+          {RUNTIME_LABEL[runtime]}
         </span>
       </div>
-      <div className={cn("grid", runtime === "dom" ? "lg:grid-cols-2" : "lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]")}>
+      <div className={cn("grid", runtime !== "js" ? "lg:grid-cols-2" : "lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]")}>
         <div className="min-w-0 border-b border-border lg:border-r lg:border-b-0">
           <CodeEditor
             value={code}
@@ -167,7 +175,8 @@ export function CodeRunner({
               onCodeChange?.(v);
             }}
             onRun={run}
-            onSyntaxCheck={setSyntaxLine}
+            onSyntaxCheck={runtime === "web" ? undefined : setSyntaxLine}
+            language={runtime === "web" ? "html" : "js"}
             ariaLabel={`${title} code editor. Press Control or Command plus Enter to run. Press Escape then Tab to leave the editor.`}
             minHeight={editorMinHeight}
           />
@@ -197,11 +206,13 @@ export function CodeRunner({
           )}
         </div>
         <div className="flex min-w-0 flex-col">
-          {runtime === "dom" && (
+          {runtime !== "js" && (
             <div className="border-b border-border">
               <div className="px-3 py-1.5 text-[11px] font-semibold tracking-wide text-subtle uppercase">Preview</div>
-              <div ref={preview} className="h-56 bg-white" data-testid="dom-preview">
-                {!running && !result && <p className="p-3 text-xs text-gray-500">Run the code to render the preview.</p>}
+              <div className={cn("relative bg-white", runtime === "web" ? "h-72" : "h-56")}>
+                {/* The sandbox mounts its iframe here imperatively, so React must not render children inside it. */}
+                <div ref={preview} className="h-full w-full" data-testid="dom-preview" />
+                {!running && !result && <p className="pointer-events-none absolute inset-0 p-3 text-xs text-gray-500">Run the code to render the preview.</p>}
               </div>
             </div>
           )}
@@ -249,7 +260,9 @@ export function CodeRunner({
               </div>
             )}
             {result && !running && !errorText && !logs.length && !result.tests.length && (
-              <span className="text-subtle">No output. Use console.log() to print values.</span>
+              <span className="text-subtle">
+                {runtime === "web" ? "Page rendered in the preview. Console messages from <script> tags appear here." : "No output. Use console.log() to print values."}
+              </span>
             )}
           </div>
         </div>
