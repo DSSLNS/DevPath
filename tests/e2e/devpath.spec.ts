@@ -110,3 +110,55 @@ test.describe("courses and lessons", () => {
     await expect(runner.getByTestId("dom-preview").frameLocator("iframe").locator("body")).not.toBeEmpty();
   });
 });
+
+test.describe("HTML validation", () => {
+  async function typeInto(page: import("@playwright/test").Page, scope: import("@playwright/test").Locator, code: string) {
+    const editor = scope.getByRole("textbox").first();
+    await editor.click();
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.press("Delete");
+    await editor.fill(code);
+  }
+
+  test("an incomplete tag is reported and does not render as if it were valid", async ({ page }) => {
+    await page.goto("/practice/playground");
+    await page.getByLabel("Environment").selectOption("web");
+    const runner = page.getByRole("region", { name: "Playground" });
+    await typeInto(page, runner, "<html");
+    await runner.getByTestId("run-code").click();
+    const diagnostics = runner.getByTestId("html-diagnostics");
+    await expect(diagnostics).toContainText("Incomplete HTML tag");
+    await expect(diagnostics).toContainText("Line 1, column");
+    await expect(runner.getByTestId("preview-blocked")).toBeVisible();
+    // The learner's code is left untouched so they can fix it.
+    await expect(runner.getByRole("textbox").first()).toHaveText("<html");
+
+    await runner.getByTestId("show-repaired").click();
+    await expect(runner.getByText("Browser-repaired version of invalid HTML")).toBeVisible();
+
+    await typeInto(page, runner, "<h1>Hello</h1>\n<br>\n<img src=\"data:,\" alt=\"Photo\">");
+    await runner.getByTestId("run-code").click();
+    await expect(runner.getByTestId("html-valid")).toContainText("HTML snippet");
+    await expect(runner.getByTestId("preview-blocked")).toHaveCount(0);
+  });
+
+  test("an HTML exercise with broken markup is not marked as passed", async ({ page }) => {
+    await page.goto("/learn/html/document-structure");
+    const card = page.getByTestId("exercise-html-document-structure-ex-2");
+    await typeInto(page, card, "<!doctype html>\n<html lang=\"en\">\n<head>\n<title>Shop</title>\n</head>\n<body>\n<h1 class=\"title>Shop</h1>\n</body>\n</html>");
+    await card.getByTestId("run-code").click();
+    await expect(card.getByTestId("html-diagnostics")).toContainText("Unclosed quotation mark");
+    await expect(card).toContainText("so the page wasn't checked");
+    await expect(card.getByLabel("Test results")).toHaveCount(0);
+  });
+
+  test("the intentional malformed-HTML demo still renders, with an explanation", async ({ page }) => {
+    await page.goto("/learn/html/what-is-html");
+    const runner = page.getByRole("region", { name: "Lesson playground" });
+    await runner.getByLabel("Example").selectOption({ label: "A forgiven mistake (unclosed strong)" });
+    await runner.getByTestId("run-code").click();
+    await expect(runner.getByTestId("html-diagnostics")).toContainText("broken on purpose");
+    await expect(runner.getByTestId("preview-blocked")).toHaveCount(0);
+    await expect(runner.getByTestId("dom-preview").frameLocator("iframe").locator("body")).not.toBeEmpty();
+  });
+});

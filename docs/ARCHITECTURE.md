@@ -43,6 +43,7 @@
 | --- | --- | --- |
 | Code execution | `lib/sandbox/*` | One runtime source string is shared by the browser sandbox and the Node/jsdom runner, so documented outputs are verified against exactly what learners see. |
 | Grading | `lib/exercises/grade.ts` | Pure functions for all 10 exercise types. Code types are graded from test results. |
+| HTML validation | `lib/html/validate.ts`, `components/editor/html-diagnostics.tsx` | **parse5** reports syntax errors with line and column. **html-validate** checks conformance: unclosed and misnested elements, forbidden content, and missing document parts. Severities are error, warning and suggestion. The mode (snippet, document or demo) comes from `htmlCheck`. Run validates first; with errors the preview and tests are skipped, and the grade is "not passed". The browser's repaired version can be shown on request, labelled and never graded. The validator is loaded only when HTML runs. |
 | HTML/CSS runtime | `lib/sandbox/browser.ts` (`runtime: "web"`), `web-document.ts` | The learner's page is the document. CSP and the test runtime are injected into `<head>`, and tests run after `DOMContentLoaded`. The checker verifies the same tests in jsdom. |
 | Quizzes | `lib/quiz.ts`, `components/quiz/*` | Deterministic, seeded question selection. Configuration is encoded in the URL. Progression rules are enforced on the hub and again on the run page. |
 | Progress | `lib/progress.ts` | Mastery, weak topics, staleness, streaks, achievements and unlock rules. The rules are shown in the UI. |

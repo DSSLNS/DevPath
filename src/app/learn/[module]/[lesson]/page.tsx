@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, Clock, ExternalLink } from "lucide-react";
 import { adjacentLessons, getLesson, getLessonRef, lessonUrl, modules, technologyForModule, type QuestionRef } from "@/content";
 import { renderInline } from "@/lib/markdown";
+import { withHtmlCheckDefaults } from "@/content/html-check";
 import { Blocks } from "@/components/content/blocks";
 import { CodeBlockStatic } from "@/components/content/code-block-static";
 import { CodeRunner } from "@/components/editor/code-runner";
@@ -32,7 +33,9 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
   const { module, lesson: lessonSlug } = await params;
   const ref = getLesson(module, lessonSlug);
   if (!ref) notFound();
-  const { lesson, module: mod, index } = ref;
+  const { module: mod, index } = ref;
+  // HTML/CSS items carry their lesson's validation mode (snippet, document or demo) into the editors.
+  const lesson = withHtmlCheckDefaults(ref.lesson);
   const { prev, next } = adjacentLessons(lesson.id);
 
   const quizQuestions: QuestionRef[] = lesson.quiz.filter((q) => GRADABLE.has(q.type)).map((exercise) => ({ exercise, lessonId: lesson.id, moduleId: mod.id }));

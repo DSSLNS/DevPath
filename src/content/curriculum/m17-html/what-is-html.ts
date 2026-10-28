@@ -219,6 +219,7 @@ export const whatIsHtml: Lesson = {
   difficulty: "beginner",
   minutes: 30,
   tech: ["html"],
+  htmlCheck: { mode: "document" },
   tags: ["html", "elements", "tags", "attributes", "dom", "browser", "devtools", "markup"],
   objectives: [
     "Explain what HTML is and why it is a markup language rather than a programming language.",
@@ -437,7 +438,7 @@ export const whatIsHtml: Lesson = {
           kind: "paragraph",
           text: "The `<strong>` below is never closed. The browser does not complain. Instead it carries the bold formatting into the next paragraphs, because it thinks you still want bold text. Run it, then open DevTools and look at the repaired DOM.",
         },
-        { kind: "code", language: "html", runtime: "web", runnable: true, code: toleranceBuggyPage },
+        { kind: "code", language: "html", runtime: "web", runnable: true, htmlCheck: { mode: "demo" }, code: toleranceBuggyPage },
       ],
     },
     {
@@ -551,7 +552,7 @@ export const whatIsHtml: Lesson = {
     { id: "html-what-is-html-example-first-page", title: "A first complete page", runtime: "web", code: minimalPage },
     { id: "html-what-is-html-example-anatomy", title: "Attributes, nesting and void elements", runtime: "web", code: anatomyPage },
     { id: "html-what-is-html-example-whitespace", title: "Whitespace collapsing", runtime: "web", code: whitespacePage },
-    { id: "html-what-is-html-example-error-tolerance", title: "A forgiven mistake (unclosed strong)", runtime: "web", code: toleranceBuggyPage },
+    { id: "html-what-is-html-example-error-tolerance", title: "A forgiven mistake (unclosed strong)", runtime: "web", htmlCheck: { mode: "demo" }, code: toleranceBuggyPage },
   ],
   exercises: [
     {

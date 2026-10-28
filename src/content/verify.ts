@@ -7,6 +7,8 @@ import { logsToOutput, runInJsdom, runInNode, runWebPage } from "@/lib/sandbox/n
 import type { RunResult } from "@/lib/sandbox/types";
 import type { Block, Challenge, CodeExample, Exercise, KbNote, Lesson } from "./types";
 import type { ContentIssue } from "./validate";
+import { resolveHtmlCheck } from "./html-check";
+import { validateHtml } from "@/lib/html/validate";
 
 export function normalizeOutput(s: string) {
   return s
@@ -87,8 +89,36 @@ export async function verifyExample(ex: CodeExample, where: string, issues: Cont
   if (r.timedOut) issues.push({ where: `${where} example ${ex.id}`, message: "Example timed out" });
 }
 
+/**
+ * HTML/CSS content must be valid HTML in its declared mode: solutions, examples and runnable
+ * blocks have no validation errors, and "demo" items really do contain problems. Starters and
+ * find-the-bug pages may be broken on purpose, so they are not checked here.
+ */
+async function verifyHtml(lesson: Lesson, issues: ContentIssue[]) {
+  const w = `lesson ${lesson.id}`;
+  const check = async (where: string, code: string, item: { htmlCheck?: Lesson["htmlCheck"] }) => {
+    const mode = resolveHtmlCheck(item, lesson);
+    if (!mode) return;
+    if (mode.mode === "demo") {
+      const v = await validateHtml(code, { mode: "document" });
+      if (!v.errors && !v.warnings) issues.push({ where, message: "Marked as an HTML demo of broken markup, but the validator finds no problems" });
+      return;
+    }
+    const v = await validateHtml(code, { mode: mode.mode, strict: mode.strict });
+    const errors = v.diagnostics.filter((d) => d.severity === "error");
+    if (errors.length)
+      issues.push({ where, message: `Invalid HTML (${mode.mode} mode): ${errors.map((d) => `${d.title}${d.line ? ` at ${d.line}:${d.column}` : ""}`).join("; ")}` });
+  };
+  for (const s of lesson.sections)
+    for (const [i, b] of s.blocks.entries()) if (b.kind === "code" && b.runtime === "web" && b.runnable) await check(`${w} section ${s.id} block[${i}]`, b.code, b);
+  for (const e of lesson.examples) if (e.runtime === "web") await check(`${w} example ${e.id}`, e.code, e);
+  for (const e of [...lesson.exercises, ...lesson.quiz, lesson.challenge])
+    if ((e.type === "code" || e.type === "find-bug") && e.runtime === "web") await check(`${w} ${e.id} solution`, e.solution, e);
+}
+
 export async function verifyLesson(lesson: Lesson, issues: ContentIssue[]) {
   const w = `lesson ${lesson.id}`;
+  await verifyHtml(lesson, issues);
   await verifyBlocks(lesson.intro, `${w} intro`, issues);
   for (const s of lesson.sections) await verifyBlocks(s.blocks, `${w} section ${s.id}`, issues);
   for (const e of lesson.examples) await verifyExample(e, w, issues);

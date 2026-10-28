@@ -143,7 +143,17 @@ export function gradeAnswer(ex: Exercise, answer: Answer): GradeResult {
   }
 }
 
-export function gradeCodeResult(result: RunResult, expectedTests: number): GradeResult {
+/**
+ * Grades a code run from its test results. For HTML exercises the validation result decides
+ * first: invalid HTML never passes, even if a browser could render it and the tests would pass.
+ */
+export function gradeCodeResult(result: RunResult, expectedTests: number, html?: { errors: number }): GradeResult {
+  if (html && html.errors > 0)
+    return {
+      correct: false,
+      score: 0,
+      feedback: `Your HTML has ${html.errors} error${html.errors > 1 ? "s" : ""}, so the page wasn't checked. Fix the problems listed under the editor and run the tests again.`,
+    };
   if (result.syntaxError) return { correct: false, score: 0, feedback: "Your code has a syntax error, so the tests could not run." };
   if (result.timedOut) return { correct: false, score: 0, feedback: "Your code took too long. Check for infinite loops or unresolved promises." };
   if (result.error) return { correct: false, score: 0, feedback: `Your code threw an error: ${result.error}` };

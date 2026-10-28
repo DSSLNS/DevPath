@@ -461,6 +461,7 @@ export const selectors: Lesson = {
   difficulty: "beginner",
   minutes: 30,
   tech: ["css", "html"],
+  htmlCheck: { mode: "document" },
   tags: ["css", "selectors", "class", "id", "combinators", "pseudo-classes", "pseudo-elements", "attribute selectors"],
   objectives: [
     "Target elements with type, class, id, universal and attribute selectors.",

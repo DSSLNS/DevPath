@@ -10,6 +10,7 @@ import { projects } from "./projects";
 import { getTechnology, techCategories, technologies } from "./technologies";
 import { buildCourse } from "./technologies/roadmap";
 import type { CourseSummary, Technology } from "./technologies/types";
+import { withHtmlCheckDefaults } from "./html-check";
 import type { Exercise, KbNote, Lesson, Module } from "./types";
 
 export { modules, kbNotes, kbCategories, challenges, projects, glossary, learningPaths, technologies, techCategories, getTechnology };
@@ -156,6 +157,6 @@ export function assessmentQuestions(lessonIds: string[], max: number): QuestionR
 export function dayChallenges(lessonIds: string[]) {
   return lessonIds.flatMap((id) => {
     const ref = lessonIndex.get(id);
-    return ref ? [{ lessonId: id, exercise: ref.lesson.challenge }] : [];
+    return ref ? [{ lessonId: id, exercise: withHtmlCheckDefaults(ref.lesson).challenge }] : [];
   });
 }

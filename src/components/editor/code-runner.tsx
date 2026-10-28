@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Eraser, Loader2, Play, RotateCcw, Square } from "lucide-react";
-import type { CodeExample, CodeTest, Runtime } from "@/content/types";
+import type { CodeExample, CodeTest, HtmlCheck, Runtime } from "@/content/types";
+import { detectHtmlMode } from "@/lib/html/mode";
+import type { HtmlValidation } from "@/lib/html/validate";
 import { runInSandbox, type RunHandle } from "@/lib/sandbox/browser";
 import type { LogEntry, RunResult } from "@/lib/sandbox/types";
 import { useLearnerState } from "@/lib/store/hooks";
@@ -11,6 +13,7 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { cn } from "@/components/ui/cn";
 import { LOAD_CODE_EVENT, type LoadCodeDetail } from "@/components/content/try-it-button";
 import { CodeEditor } from "./code-editor";
+import { HtmlDiagnostics } from "./html-diagnostics";
 
 export interface CodeRunnerProps {
   examples?: CodeExample[];
@@ -24,7 +27,13 @@ export interface CodeRunnerProps {
   onCodeChange?: (code: string) => void;
   /** Tests to run with the code (challenges / exercises). */
   tests?: CodeTest[];
-  onResult?: (result: RunResult, code: string) => void;
+  /**
+   * Called after each graded run. For HTML ("web" runtime) the validation result is passed too;
+   * when it has errors the page was not rendered and the tests did not run.
+   */
+  onResult?: (result: RunResult, code: string, html?: HtmlValidation) => void;
+  /** How HTML is validated in the "web" runtime. Omitted: detected from the code (free-form playgrounds only). */
+  htmlCheck?: HtmlCheck;
   runLabel?: string;
   /** Reset target (defaults to the selected example / initial code). */
   resetCode?: string;
@@ -53,11 +62,17 @@ export function CodeRunner({
   resetCode,
   editorMinHeight = 180,
   id,
+  htmlCheck: htmlCheckProp,
 }: CodeRunnerProps) {
   const { settings } = useLearnerState();
   const [exampleId, setExampleId] = useState(examples?.[0]?.id);
   const example = examples?.find((e) => e.id === exampleId);
   const [runtime, setRuntime] = useState<Runtime>(example?.runtime ?? runtimeProp);
+  const [tryItCheck, setTryItCheck] = useState<HtmlCheck | undefined>(undefined);
+  const [validation, setValidation] = useState<HtmlValidation | null>(null);
+  const [blocked, setBlocked] = useState(false);
+  const [repairedPreview, setRepairedPreview] = useState(false);
+  const [jumpTo, setJumpTo] = useState<{ line: number; column: number; seq: number }>();
   const [html, setHtml] = useState(example?.html ?? htmlProp ?? "");
   const baseCode = example?.code ?? initialCode ?? "";
   const [code, setCode] = useState(initialCode ?? example?.code ?? "");
@@ -78,6 +93,9 @@ export function CodeRunner({
       setExampleId(undefined);
       setCode(d.code);
       setRuntime(d.runtime);
+      setTryItCheck(d.htmlCheck);
+      setValidation(null);
+      setBlocked(false);
       if (d.runtime !== "dom") setHtml("");
       setLogs([]);
       setResult(null);
@@ -86,36 +104,70 @@ export function CodeRunner({
     return () => window.removeEventListener(LOAD_CODE_EVENT, onLoad);
   }, [acceptTryIt]);
 
-  const run = useCallback(async () => {
-    handle.current?.cancel();
-    const seq = ++runSeq.current;
-    setLogs([]);
-    setResult(null);
-    setRunning(true);
-    const live: LogEntry[] = [];
-    const h = runInSandbox({
-      // In the web runtime the edited code is the page itself.
-      code: runtime === "web" ? "" : code,
-      tests,
-      runtime,
-      html: runtime === "web" ? code : html,
-      timeoutMs: settings.codeTimeoutMs,
-      previewContainer: preview.current,
-      dark: document.documentElement.dataset.theme === "dark",
-      onLog: (l) => {
-        live.push(l);
-        // Logs after completion (e.g. DOM click handlers) keep streaming in.
-        if (seq === runSeq.current) setLogs([...live]);
-      },
-    });
-    handle.current = h;
-    const r = await h.result;
-    if (seq !== runSeq.current) return;
-    setRunning(false);
-    setResult(r);
-    if (runtime === "js") setLogs(r.logs);
-    onResult?.(r, code);
-  }, [code, tests, runtime, html, settings.codeTimeoutMs, onResult]);
+  // Explicit setting first (example, "Try it" block, exercise); free-form playgrounds detect it.
+  const configuredCheck = (exampleId ? example?.htmlCheck : tryItCheck) ?? htmlCheckProp;
+  const activeCheck: HtmlCheck = configuredCheck ?? { mode: detectHtmlMode(code) };
+
+  /**
+   * Run workflow. For HTML: validate first (browsers repair broken markup, so a rendered preview
+   * proves nothing); with errors the preview and tests are skipped unless this is a demo, or the
+   * learner explicitly asks for the browser's repaired version (`showRepaired`, never graded).
+   */
+  const run = useCallback(
+    async (showRepaired = false) => {
+      handle.current?.cancel();
+      const seq = ++runSeq.current;
+      setLogs([]);
+      setResult(null);
+      setRunning(true);
+      let htmlResult: HtmlValidation | undefined;
+      if (runtime === "web") {
+        // Loaded on first use so JavaScript-only pages don't download the HTML parsers.
+        const { validateHtml } = await import("@/lib/html/validate");
+        htmlResult = await validateHtml(code, { mode: activeCheck.mode === "demo" ? "document" : activeCheck.mode, strict: activeCheck.strict });
+        if (seq !== runSeq.current) return;
+        setValidation(htmlResult);
+        const stop = htmlResult.errors > 0 && activeCheck.mode !== "demo" && !showRepaired;
+        setBlocked(stop);
+        setRepairedPreview(showRepaired && htmlResult.errors > 0);
+        if (stop) {
+          preview.current?.replaceChildren();
+          setRunning(false);
+          onResult?.({ logs: [], error: null, errorLine: null, syntaxError: false, tests: [], durationMs: 0 }, code, htmlResult);
+          return;
+        }
+      } else {
+        setValidation(null);
+        setBlocked(false);
+        setRepairedPreview(false);
+      }
+      const live: LogEntry[] = [];
+      const h = runInSandbox({
+        // In the web runtime the edited code is the page itself.
+        code: runtime === "web" ? "" : code,
+        // A repaired preview of invalid HTML is for looking only: no tests, no grading.
+        tests: showRepaired ? [] : tests,
+        runtime,
+        html: runtime === "web" ? code : html,
+        timeoutMs: settings.codeTimeoutMs,
+        previewContainer: preview.current,
+        dark: document.documentElement.dataset.theme === "dark",
+        onLog: (l) => {
+          live.push(l);
+          // Logs after completion (e.g. DOM click handlers) keep streaming in.
+          if (seq === runSeq.current) setLogs([...live]);
+        },
+      });
+      handle.current = h;
+      const r = await h.result;
+      if (seq !== runSeq.current) return;
+      setRunning(false);
+      setResult(r);
+      if (runtime === "js") setLogs(r.logs);
+      if (!showRepaired) onResult?.(r, code, htmlResult);
+    },
+    [code, tests, runtime, html, settings.codeTimeoutMs, onResult, activeCheck.mode, activeCheck.strict],
+  );
 
   const reset = () => {
     handle.current?.cancel();
@@ -133,6 +185,8 @@ export function CodeRunner({
     setExampleId(idValue);
     setCode(ex.code);
     setRuntime(ex.runtime ?? "js");
+    setValidation(null);
+    setBlocked(false);
     setHtml(ex.html ?? "");
     setLogs([]);
     setResult(null);
@@ -174,7 +228,8 @@ export function CodeRunner({
               setCode(v);
               onCodeChange?.(v);
             }}
-            onRun={run}
+            onRun={() => void run()}
+            jumpTo={jumpTo}
             onSyntaxCheck={runtime === "web" ? undefined : setSyntaxLine}
             language={runtime === "web" ? "html" : "js"}
             ariaLabel={`${title} code editor. Press Control or Command plus Enter to run. Press Escape then Tab to leave the editor.`}
@@ -186,7 +241,7 @@ export function CodeRunner({
                 <Square className="h-3.5 w-3.5" aria-hidden /> Stop
               </Button>
             ) : (
-              <Button variant="primary" size="sm" onClick={run} data-testid="run-code">
+              <Button variant="primary" size="sm" onClick={() => void run()} data-testid="run-code">
                 <Play className="h-3.5 w-3.5" aria-hidden /> {runLabel}
               </Button>
             )}
@@ -199,6 +254,14 @@ export function CodeRunner({
             </Button>
             <span className="ml-auto hidden text-[11px] text-subtle sm:inline">Ctrl/⌘ + Enter to run</span>
           </div>
+          {runtime === "web" && validation && (
+            <HtmlDiagnostics
+              validation={validation}
+              mode={activeCheck.mode}
+              autoDetected={!configuredCheck}
+              onLocate={(line, column) => setJumpTo((j) => ({ line, column, seq: (j?.seq ?? 0) + 1 }))}
+            />
+          )}
           {syntaxLine !== null && (
             <p className="border-t border-border bg-warning-soft px-3 py-1.5 text-xs text-warning" role="status">
               Possible syntax error near line {syntaxLine}. Check for missing brackets, quotes or commas.
@@ -208,11 +271,26 @@ export function CodeRunner({
         <div className="flex min-w-0 flex-col">
           {runtime !== "js" && (
             <div className="border-b border-border">
-              <div className="px-3 py-1.5 text-[11px] font-semibold tracking-wide text-subtle uppercase">Preview</div>
+              <div className="flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold tracking-wide text-subtle uppercase">
+                Preview
+                {repairedPreview && <span className="normal-case tracking-normal text-warning">Browser-repaired version of invalid HTML (not checked)</span>}
+              </div>
               <div className={cn("relative bg-white", runtime === "web" ? "h-72" : "h-56")}>
                 {/* The sandbox mounts its iframe here imperatively, so React must not render children inside it. */}
                 <div ref={preview} className="h-full w-full" data-testid="dom-preview" />
-                {!running && !result && <p className="pointer-events-none absolute inset-0 p-3 text-xs text-gray-500">Run the code to render the preview.</p>}
+                {!running && !result && !blocked && <p className="pointer-events-none absolute inset-0 p-3 text-xs text-gray-500">Run the code to render the preview.</p>}
+                {blocked && (
+                  <div className="absolute inset-0 flex flex-col items-start gap-2 bg-white p-3 text-xs text-gray-700" data-testid="preview-blocked">
+                    <p className="font-semibold text-red-700">The preview is paused because your HTML has errors.</p>
+                    <p>
+                      A browser would still show something: it silently repairs broken markup. That&apos;s why a page appearing doesn&apos;t mean the HTML is correct.
+                      Fix the errors listed under the editor, then run again.
+                    </p>
+                    <button type="button" className="rounded border border-gray-300 px-2 py-1 font-medium hover:bg-gray-100" onClick={() => void run(true)} data-testid="show-repaired">
+                      Show the browser&apos;s repaired version
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

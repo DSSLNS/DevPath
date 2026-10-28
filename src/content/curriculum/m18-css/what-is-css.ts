@@ -334,6 +334,7 @@ export const whatIsCss: Lesson = {
   difficulty: "beginner",
   minutes: 30,
   tech: ["css", "html"],
+  htmlCheck: { mode: "document" },
   tags: ["css", "stylesheet", "style element", "link element", "inline styles", "css syntax", "devtools"],
   objectives: [
     "Explain what CSS is and why content (HTML) and presentation (CSS) are kept separate.",

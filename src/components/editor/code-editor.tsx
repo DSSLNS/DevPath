@@ -50,6 +50,8 @@ export interface CodeEditorProps {
   placeholder?: string;
   /** Called with the first syntax error line (or null) whenever the document changes. */
   onSyntaxCheck?: (line: number | null) => void;
+  /** Move the cursor to this 1-based position and focus the editor (change `seq` to jump again). */
+  jumpTo?: { line: number; column: number; seq: number };
 }
 
 export function CodeEditor({
@@ -63,6 +65,7 @@ export function CodeEditor({
   readOnly,
   placeholder,
   onSyntaxCheck,
+  jumpTo,
 }: CodeEditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
@@ -71,6 +74,15 @@ export function CodeEditor({
     cbs.current = { onChange, onRun, onSyntaxCheck };
   });
   const readOnlyComp = useRef(new Compartment());
+
+  useEffect(() => {
+    const v = view.current;
+    if (!v || !jumpTo) return;
+    const line = v.state.doc.line(Math.min(Math.max(jumpTo.line, 1), v.state.doc.lines));
+    const pos = Math.min(line.from + Math.max(jumpTo.column - 1, 0), line.to);
+    v.dispatch({ selection: { anchor: pos }, scrollIntoView: true });
+    v.focus();
+  }, [jumpTo]);
 
   useEffect(() => {
     if (!host.current) return;

@@ -1,21 +1,22 @@
 "use client";
 
 import { Play } from "lucide-react";
-import type { Runtime } from "@/content/types";
+import type { HtmlCheck, Runtime } from "@/content/types";
 
 export const LOAD_CODE_EVENT = "jsa:load-code";
 export interface LoadCodeDetail {
   code: string;
   runtime: Runtime;
+  htmlCheck?: HtmlCheck;
 }
 
 /** Sends a code snippet to the page's playground (if any) and scrolls to it. */
-export function TryItButton({ code, runtime }: { code: string; runtime: Runtime }) {
+export function TryItButton({ code, runtime, htmlCheck }: { code: string; runtime: Runtime; htmlCheck?: HtmlCheck }) {
   return (
     <button
       type="button"
       onClick={() => {
-        window.dispatchEvent(new CustomEvent<LoadCodeDetail>(LOAD_CODE_EVENT, { detail: { code, runtime } }));
+        window.dispatchEvent(new CustomEvent<LoadCodeDetail>(LOAD_CODE_EVENT, { detail: { code, runtime, htmlCheck } }));
         document.getElementById("playground")?.scrollIntoView({ behavior: "smooth", block: "start" });
       }}
       className="inline-flex h-6 items-center gap-1 rounded px-1.5 text-xs font-medium text-primary hover:bg-primary-soft"

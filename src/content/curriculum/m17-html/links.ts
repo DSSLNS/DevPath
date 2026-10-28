@@ -9,6 +9,7 @@ export const links: Lesson = {
   difficulty: "beginner",
   minutes: 30,
   tech: ["html"],
+  htmlCheck: { mode: "document" },
   tags: ["html", "links", "anchor", "href", "urls", "navigation", "accessibility"],
   objectives: [
     "Create links with the `<a>` element and the `href` attribute.",

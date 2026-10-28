@@ -6,6 +6,7 @@ import type { Exercise } from "@/content/types";
 import { gradeAnswer, gradeCodeResult, isEmptyAnswer, type Answer, type GradeResult } from "@/lib/exercises/grade";
 import { renderInline } from "@/lib/markdown";
 import type { RunResult } from "@/lib/sandbox/types";
+import type { HtmlValidation } from "@/lib/html/validate";
 import { learnerStore, useLearnerState, useStoreMeta } from "@/lib/store/hooks";
 import { Badge, DifficultyBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,10 +63,10 @@ function ExerciseCardInner({ exercise: ex, index, label, restore }: { exercise: 
     learnerStore.recordExercise(ex.id, g.correct, answer);
   };
 
-  const onCodeResult = (r: RunResult, code: string) => {
+  const onCodeResult = (r: RunResult, code: string, html?: HtmlValidation) => {
     setLastRun(r);
     const tests = ex.type === "code" || ex.type === "find-bug" ? ex.tests.length : 0;
-    const g = gradeCodeResult(r, tests);
+    const g = gradeCodeResult(r, tests, html);
     setGrade(g);
     setGradedAnswer(JSON.stringify({ type: ex.type, value: code }));
     learnerStore.recordExercise(ex.id, g.correct, { type: ex.type, value: code });
@@ -121,6 +122,7 @@ function ExerciseCardInner({ exercise: ex, index, label, restore }: { exercise: 
             resetCode={ex.type === "code" ? ex.starter : ex.code}
             tests={ex.tests}
             runtime={ex.runtime ?? "js"}
+            htmlCheck={ex.type === "code" || ex.type === "find-bug" ? ex.htmlCheck : undefined}
             runLabel="Run tests"
             onResult={onCodeResult}
             editorMinHeight={140}

@@ -9,6 +9,7 @@ export const documentStructure: Lesson = {
   difficulty: "beginner",
   minutes: 30,
   tech: ["html"],
+  htmlCheck: { mode: "document" },
   tags: ["html", "doctype", "head", "body", "meta", "title", "lang", "boilerplate", "file naming"],
   objectives: [
     "Write the standard HTML skeleton from memory and explain what every line does.",

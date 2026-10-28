@@ -455,6 +455,7 @@ export const boxModel: Lesson = {
   difficulty: "beginner",
   minutes: 30,
   tech: ["css", "html"],
+  htmlCheck: { mode: "document" },
   tags: ["css", "box model", "padding", "margin", "border", "box-sizing", "spacing", "devtools"],
   objectives: [
     "Name the four layers of the CSS box (content, padding, border, margin) and say what each one is for.",

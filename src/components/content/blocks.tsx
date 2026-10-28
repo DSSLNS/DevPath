@@ -46,7 +46,7 @@ function BlockView({ block: b }: { block: Block }) {
             code={b.code}
             language={b.language ?? "js"}
             title={b.title}
-            actions={runnable ? <TryItButton code={b.code} runtime={b.runtime ?? "js"} /> : undefined}
+            actions={runnable ? <TryItButton code={b.code} runtime={b.runtime ?? "js"} htmlCheck={b.htmlCheck} /> : undefined}
           />
           {b.output !== undefined && (
             <div className="-mt-3 mb-4 rounded-b-lg border border-t-0 border-code-border bg-surface-2 px-3 py-2">

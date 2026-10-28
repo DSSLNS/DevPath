@@ -113,6 +113,13 @@ HTML and CSS code runs with `runtime: "web"`. The code *is* the page: a complete
   - Don't assert on `auto` margins, percentages, `em`/`rem` values or layout measurements such as `offsetWidth`. jsdom does no layout, so those differ from browsers.
   - jsdom ignores every rule whose selector list contains a pseudo-element. For example, `*, *::before, *::after { box-sizing: border-box }` has no effect in the checker, although browsers apply it. For rules like that, accept either the computed value or a matching rule found through `document.styleSheets`.
   - Give tests learner-friendly names and failure messages: `assert.ok(img.alt.trim(), "Every image needs a non-empty alt attribute")`.
+- **Validation mode (`htmlCheck`, required).** Learner HTML is validated before it is previewed or graded, because browsers silently repair broken markup. Set a lesson default with `htmlCheck: { mode: "document" }` and override it per block, example or exercise:
+  - `"snippet"`: a fragment such as `<h1>Hi</h1>`. No doctype, `<html>`, `<head>` or `<body>` is needed.
+  - `"document"`: a complete page. A doctype, `<html>`, `<head>` with `<title>`, and `<body>` are required.
+  - `"demo"`: markup that is broken on purpose to show browser error recovery. The problems are listed, but the preview always renders. Explain the recovery in the surrounding text.
+  - Add `strict: true` to require explicit end tags, so an implicitly closed `<p>` becomes an error.
+
+  The checker fails if any solution, example or runnable block has validation errors in its mode, or if a `"demo"` item has no problems. Starters and find-the-bug pages may be broken on purpose. In the app, an exercise passes only when the HTML has no errors **and** every test passes.
 - `predict-output` runs JavaScript, so don't use it in HTML or CSS lessons. Use `mcq`, `multi-select`, `true-false`, `fill-blank`, `match`, `order`, `short-answer`, and `code`/`find-bug` with the web runtime.
 
 ## Quality bar

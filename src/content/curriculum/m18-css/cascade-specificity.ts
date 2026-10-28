@@ -9,6 +9,7 @@ export const cascadeSpecificity: Lesson = {
   difficulty: "beginner",
   minutes: 35,
   tech: ["css", "html"],
+  htmlCheck: { mode: "document" },
   tags: ["css", "cascade", "specificity", "inheritance", "!important", "inherit", "initial", "unset", "devtools"],
   objectives: [
     "Explain what the cascade is and list the order the browser uses to settle conflicts: origin and importance, specificity, then source order.",

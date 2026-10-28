@@ -41,6 +41,7 @@ export const textContent: Lesson = {
   difficulty: "beginner",
   minutes: 30,
   tech: ["html"],
+  htmlCheck: { mode: "document" },
   tags: ["html", "headings", "paragraphs", "text", "semantics", "strong", "em", "character references", "whitespace"],
   objectives: [
     "Build a logical heading outline with `<h1>`–`<h6>`: one `<h1>`, no skipped levels, headings chosen for meaning rather than size.",

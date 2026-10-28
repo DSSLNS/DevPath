@@ -31,6 +31,20 @@ export type CodeLanguage = "js" | "ts" | "jsx" | "tsx" | "html" | "css" | "bash"
  */
 export type Runtime = "js" | "dom" | "web";
 
+/**
+ * How HTML in the "web" runtime is validated before it is previewed or graded:
+ *  - "snippet": a fragment such as `<h1>Hi</h1>`; no document skeleton is required.
+ *  - "document": a complete page; doctype, `<html>`, `<head>` (with `<title>`) and `<body>` are required.
+ *  - "demo": intentionally broken markup used to show how browsers recover; problems are shown but never block the preview.
+ */
+export type HtmlCheckMode = "snippet" | "document" | "demo";
+
+export interface HtmlCheck {
+  mode: HtmlCheckMode;
+  /** Require explicit end tags too (an implicitly closed `<p>` becomes an error). */
+  strict?: boolean;
+}
+
 export interface Reference {
   title: string;
   url: string;
@@ -54,6 +68,8 @@ export type Block =
       /** Show a "Try it" button that loads this code into the playground runner. */
       runnable?: boolean;
       runtime?: Runtime;
+      /** Required for runnable `runtime: "web"` blocks. */
+      htmlCheck?: HtmlCheck;
     }
   | {
       kind: "callout";
@@ -155,6 +171,8 @@ export type ExerciseRuntime = "js" | "web";
 export interface FindBugExercise extends ExerciseBase {
   type: "find-bug";
   runtime?: ExerciseRuntime;
+  /** Required with `runtime: "web"`: how the learner's page is validated before tests run. */
+  htmlCheck?: HtmlCheck;
   /** Buggy code the learner must fix. */
   code: string;
   tests: CodeTest[];
@@ -172,6 +190,8 @@ export interface FillBlankExercise extends ExerciseBase {
 export interface CodeExercise extends ExerciseBase {
   type: "code";
   runtime?: ExerciseRuntime;
+  /** Required with `runtime: "web"`: how the learner's page is validated before tests run. */
+  htmlCheck?: HtmlCheck;
   starter: string;
   tests: CodeTest[];
   solution: string;
@@ -224,6 +244,8 @@ export interface CodeExample {
   runtime?: Runtime;
   /** For runtime "dom": HTML body markup the script runs against. */
   html?: string;
+  /** Required for runtime "web". */
+  htmlCheck?: HtmlCheck;
 }
 
 export interface CommonMistake {
@@ -273,6 +295,8 @@ export interface Lesson {
   keyPoints: string[];
   related: string[]; // lesson ids
   references: Reference[];
+  /** Default HTML validation for this lesson's `runtime: "web"` blocks, examples and exercises (each may override it). */
+  htmlCheck?: HtmlCheck;
   /** Override default practice requirements for this lesson. */
   requirements?: Partial<PracticeRequirements>;
   /** Recommended practices (inline markdown). Shown after the teaching sections. */

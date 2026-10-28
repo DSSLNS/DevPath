@@ -193,6 +193,15 @@ export function checkLesson(lesson: Lesson, mod: Module, allLessonIds: Set<strin
   if (mcq < req.quizMcq) issues.push({ where: w, message: `Quiz needs ${req.quizMcq} MCQs (has ${mcq})` });
   [...lesson.exercises, ...lesson.quiz, lesson.challenge].forEach((e) => checkExercise(e, w, issues));
 
+  // Every HTML/CSS item must say how it is validated (snippet, complete document, or demo).
+  const webItems = [
+    ...[...lesson.intro, ...lesson.sections.flatMap((x) => x.blocks)].filter((b) => b.kind === "code" && b.runtime === "web" && b.runnable),
+    ...lesson.examples.filter((e) => e.runtime === "web"),
+    ...[...lesson.exercises, ...lesson.quiz, lesson.challenge].filter((e) => (e.type === "code" || e.type === "find-bug") && e.runtime === "web"),
+  ] as { htmlCheck?: unknown }[];
+  if (webItems.some((item) => !item.htmlCheck && !lesson.htmlCheck))
+    issues.push({ where: w, message: 'HTML/CSS ("web" runtime) items need an htmlCheck mode: set lesson.htmlCheck or htmlCheck on each item' });
+
   const fullFormat = !LEGACY_FORMAT_MODULES.has(mod.id);
   if ((fullFormat || lesson.bestPractices) && (lesson.bestPractices?.length ?? 0) < 2)
     issues.push({ where: w, message: "bestPractices needs at least 2 items" });
