@@ -13,14 +13,15 @@ import { TechCard } from "./tech-card";
 
 type Sort = "recommended" | "name" | "progress" | "recent";
 type Availability = "all" | "lessons" | "any-content";
+type ProgressFilter = "all" | "not-started" | "in-progress" | "completed";
 
 const control = "h-9 rounded-md border border-border bg-surface px-2 text-sm text-fg";
 
 /**
  * "What would you like to learn today?" — searchable, filterable technology cards grouped by category.
- * `compact` limits the view to technologies with content (used on the dashboard).
+ * `compact` limits the view to technologies with content; `featuredIds` shows only those courses, ungrouped (home page).
  */
-export function CourseCatalog({ compact = false, headingLevel = 2 }: { compact?: boolean; headingLevel?: 2 | 3 }) {
+export function CourseCatalog({ compact = false, headingLevel = 2, featuredIds }: { compact?: boolean; headingLevel?: 2 | 3; featuredIds?: string[] }) {
   const catalog = useCatalog();
   const state = useLearnerState();
   const [query, setQuery] = useState("");
@@ -28,11 +29,24 @@ export function CourseCatalog({ compact = false, headingLevel = 2 }: { compact?:
   const [level, setLevel] = useState<Difficulty | "all">("all");
   const [availability, setAvailability] = useState<Availability>(compact ? "any-content" : "all");
   const [sort, setSort] = useState<Sort>("recommended");
+  const [pathId, setPathId] = useState("all");
+  const [progressFilter, setProgressFilter] = useState<ProgressFilter>("all");
+  const careerPaths = catalog.paths.filter((p) => p.steps);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = catalog.technologies.filter(
+    const pathTechs = pathId === "all" ? null : new Set(careerPaths.find((p) => p.id === pathId)?.technologyIds ?? []);
+    const base = featuredIds ? featuredIds.map((id) => catalog.technologies.find((t) => t.id === id)).filter((t) => !!t) : catalog.technologies;
+    const list = base.filter(
       (t) =>
+        (!pathTechs || pathTechs.has(t.id)) &&
+        (progressFilter === "all" ||
+          (() => {
+            const p = techProgress(t, state);
+            if (progressFilter === "completed") return p.total > 0 && p.completed === p.total;
+            if (progressFilter === "in-progress") return p.started && !(p.total > 0 && p.completed === p.total);
+            return !p.started;
+          })()) &&
         (!q || `${t.name} ${t.description} ${t.badge}`.toLowerCase().includes(q)) &&
         (category === "all" || t.category === category) &&
         (level === "all" || t.level === level) &&
@@ -43,15 +57,17 @@ export function CourseCatalog({ compact = false, headingLevel = 2 }: { compact?:
     if (sort === "recent")
       return [...list].sort((a, b) => (techProgress(b, state).lastOpenedAt ?? "").localeCompare(techProgress(a, state).lastOpenedAt ?? ""));
     return list;
-  }, [catalog.technologies, query, category, level, availability, sort, state]);
+  }, [catalog.technologies, query, category, level, availability, sort, state, pathId, progressFilter, featuredIds, careerPaths]);
 
   const H = headingLevel === 2 ? "h2" : "h3";
-  const grouped = sort === "recommended";
+  const grouped = sort === "recommended" && !featuredIds && pathId === "all";
   const reset = () => {
     setQuery("");
     setCategory("all");
     setLevel("all");
     setAvailability("all");
+    setPathId("all");
+    setProgressFilter("all");
   };
 
   return (
@@ -67,6 +83,17 @@ export function CourseCatalog({ compact = false, headingLevel = 2 }: { compact?:
             className={`${control} w-full`}
             data-testid="tech-search"
           />
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs text-muted">Learning path</span>
+          <select value={pathId} onChange={(e) => setPathId(e.target.value)} className={`${control} w-full`} data-testid="filter-path">
+            <option value="all">All paths</option>
+            {careerPaths.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="text-sm">
           <span className="mb-1 block text-xs text-muted">Category</span>
@@ -94,6 +121,15 @@ export function CourseCatalog({ compact = false, headingLevel = 2 }: { compact?:
             <option value="all">Everything, including coming soon</option>
             <option value="any-content">Lessons or notes available</option>
             <option value="lessons">Lessons available</option>
+          </select>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block text-xs text-muted">My progress</span>
+          <select value={progressFilter} onChange={(e) => setProgressFilter(e.target.value as ProgressFilter)} className={`${control} w-full`} data-testid="filter-progress">
+            <option value="all">Any progress</option>
+            <option value="not-started">Not started</option>
+            <option value="in-progress">In progress</option>
+            <option value="completed">Completed</option>
           </select>
         </label>
         <label className="text-sm">

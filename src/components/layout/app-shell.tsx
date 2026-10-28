@@ -12,19 +12,14 @@ import {
   FlaskConical,
   FolderKanban,
   GraduationCap,
-  Layers,
   LayoutDashboard,
   ListChecks,
   Menu,
   Moon,
-  Monitor,
-  NotebookPen,
   Route,
   Search,
-  Server,
   Settings,
   Sun,
-  TestTubes,
   X,
 } from "lucide-react";
 import { siteConfig } from "@/config/site";
@@ -37,25 +32,26 @@ import { SearchPalette } from "./search-palette";
 export const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/courses", label: "Explore Courses", icon: GraduationCap },
-  { href: "/paths/frontend", label: "Frontend Development", icon: Monitor },
-  { href: "/paths/backend", label: "Backend Development", icon: Server },
-  { href: "/paths/testing", label: "Testing & Automation", icon: TestTubes },
-  { href: "/paths/fullstack", label: "Full Stack Development", icon: Layers },
   { href: "/paths", label: "Learning Paths", icon: Route },
   { href: "/practice", label: "Practice Lab", icon: FlaskConical },
   { href: "/quizzes", label: "Quizzes & Assessments", icon: ListChecks },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/bookmarks", label: "Bookmarks", icon: BookMarked },
-  { href: "/notes", label: "My Notes", icon: NotebookPen },
   { href: "/progress", label: "My Progress", icon: Award },
   { href: "/settings", label: "Settings", icon: Settings },
+] as const;
+
+/** Secondary destinations, kept reachable without crowding the main menu. */
+const MORE = [
+  { href: "/notes", label: "My Notes" },
+  { href: "/concepts", label: "JavaScript Concepts" },
+  { href: "/e2e", label: "E2E Testing Notes" },
 ] as const;
 
 const noopSubscribe = () => () => {};
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
-  if (href === "/paths") return pathname === "/paths";
   return pathname === href || pathname.startsWith(href + "/");
 }
 
@@ -114,8 +110,8 @@ function Sidebar({ pathname }: { pathname: string }) {
   const inCourse = pathname.startsWith("/learn") || pathname.startsWith("/concepts") || pathname.startsWith("/e2e");
   return (
     <div className="flex h-full flex-col">
-      <Link href="/" className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4 font-semibold tracking-tight">
-        <span className="grid h-7 w-7 place-items-center rounded-md bg-primary text-[11px] font-bold text-primary-fg" aria-hidden>
+      <Link href="/" className="flex h-14 shrink-0 items-center gap-2.5 border-b border-border px-4 font-display text-[17px] font-semibold tracking-tight">
+        <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-primary to-info font-display text-[12px] font-bold text-primary-fg shadow-sm" aria-hidden>
           DP
         </span>
         {siteConfig.name}
@@ -130,7 +126,7 @@ function Sidebar({ pathname }: { pathname: string }) {
                   href={href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors",
+                    "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
                     active ? "bg-primary-soft font-medium text-primary-soft-fg" : "text-muted hover:bg-surface-hover hover:text-fg",
                   )}
                 >
@@ -143,6 +139,17 @@ function Sidebar({ pathname }: { pathname: string }) {
         </ul>
         {pathname.startsWith("/learn/") && <CourseTree pathname={pathname} />}
       </nav>
+      <div className="border-t border-border px-4 py-3 text-xs text-subtle">
+        <span className="font-medium">More:</span>{" "}
+        {MORE.map((m, i) => (
+          <span key={m.href}>
+            {i > 0 && " · "}
+            <Link href={m.href} aria-current={isActive(pathname, m.href) ? "page" : undefined} className={cn("hover:text-fg hover:underline", isActive(pathname, m.href) && "text-primary")}>
+              {m.label}
+            </Link>
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

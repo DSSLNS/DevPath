@@ -14,10 +14,10 @@ async function runCode(page: Page, code: string) {
 }
 
 test.describe("navigation and shell", () => {
-  test("new learner sees onboarding, not invented progress", async ({ page }) => {
+  test("new learner sees the landing sections, not invented progress", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByTestId("onboarding")).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1, name: "Learn Web Development, Step by Step." })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Build Your Web Development Skills, One Step at a Time." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Pick up where you left off" })).toHaveCount(0);
   });
 
   test("primary navigation reaches every section", async ({ page }) => {
@@ -25,16 +25,11 @@ test.describe("navigation and shell", () => {
     const nav = page.getByRole("navigation", { name: "Main navigation" });
     for (const [label, heading] of [
       ["Explore Courses", "What would you like to learn today?"],
-      ["Frontend Development", "Frontend Development"],
-      ["Backend Development", "Backend Development"],
-      ["Testing & Automation", "Testing & Automation"],
-      ["Full Stack Development", "Full Stack Development"],
       ["Learning Paths", "Learning paths"],
       ["Practice Lab", "Practice Lab"],
       ["Quizzes & Assessments", "Quizzes & Assessments"],
       ["Projects", "Projects"],
       ["Bookmarks", "Bookmarks"],
-      ["My Notes", "My Notes"],
       ["My Progress", "Progress & Achievements"],
       ["Settings", "Settings"],
     ]) {
@@ -270,7 +265,7 @@ test.describe("personal workspace", () => {
     await page.evaluate(() => localStorage.setItem("jsacademy:state:v1", "{not json"));
     await page.reload();
     await expect(page.getByRole("alert").filter({ hasText: "repaired" })).toBeVisible();
-    await expect(page.getByTestId("onboarding")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Build Your Web Development Skills, One Step at a Time." })).toBeVisible();
   });
 
   test("assessments respect progression rules", async ({ page }) => {

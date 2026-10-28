@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getModuleBySlug, modules } from "@/content";
 import { curriculumManifest } from "@/content/curriculum/manifest";
 import { PageHeader } from "@/components/ui/card";
+import { renderInline } from "@/lib/markdown";
 import { Badge, DifficultyBadge } from "@/components/ui/badge";
 import { ModuleLessonStatus, ModuleAssessmentLink } from "@/components/learn/module-client";
 
@@ -53,7 +54,7 @@ export default async function ModulePage({ params }: { params: Promise<{ module:
                   {l.optional && <Badge tone="warning">Optional</Badge>}
                   <span className="text-xs text-subtle">{l.minutes} min</span>
                 </span>
-                <span className="mt-0.5 block text-sm text-muted">{l.summary}</span>
+                <span className="mt-0.5 block text-sm text-muted">{renderInline(l.summary)}</span>
               </span>
               <ModuleLessonStatus lessonId={l.id} />
             </Link>

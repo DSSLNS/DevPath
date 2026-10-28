@@ -133,7 +133,7 @@ export interface PersistedState {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  theme: "system",
+  theme: "dark",
   editorFontSize: 14,
   masteryThreshold: 80,
   showAchievements: true,

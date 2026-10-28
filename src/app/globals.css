@@ -48,36 +48,40 @@
   --radius-sm: 4px;
   --radius-md: 6px;
   --radius-lg: 10px;
+  --radius-xl: 16px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --glow: radial-gradient(60% 60% at 50% 40%, rgb(79 70 229 / 0.1), transparent 70%);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0e1116;
-  --bg-subtle: #151922;
-  --surface: #141820;
-  --surface-2: #181d27;
-  --surface-hover: #1d2330;
-  --border: #262c38;
-  --border-strong: #353d4c;
-  --text: #e6e9ef;
-  --text-muted: #aab2bf;
-  --text-subtle: #8a93a2;
-  --primary: #8b8cf8;
-  --primary-hover: #a3a4fa;
-  --primary-fg: #0e1116;
-  --primary-soft: #23264a;
-  --primary-soft-fg: #c7c8ff;
+  /* Neutral, slightly cool surfaces with a restrained violet accent. */
+  --bg: #0a0c11;
+  --bg-subtle: #11141b;
+  --surface: #12151d;
+  --surface-2: #161a23;
+  --surface-hover: #1b202b;
+  --border: #222734;
+  --border-strong: #323949;
+  --text: #ecedf2;
+  --text-muted: #a9afbe;
+  --text-subtle: #858c9c;
+  --primary: #9a8cff;
+  --primary-hover: #b0a5ff;
+  --primary-fg: #0d0b1a;
+  --primary-soft: #221d43;
+  --primary-soft-fg: #cfc8ff;
   --success: #4ade80;
-  --success-soft: #11291b;
+  --success-soft: #0f2a1b;
   --warning: #fbbf24;
-  --warning-soft: #2c2412;
+  --warning-soft: #2b2311;
   --danger: #f87171;
   --danger-soft: #2f1517;
-  --info: #5fb4ef;
-  --info-soft: #0f2534;
-  --focus: #a5a6fb;
-  --code-bg: #10141b;
-  --code-border: #252b36;
+  --info: #67b8f0;
+  --info-soft: #0e2434;
+  --focus: #b0a5ff;
+  --code-bg: #0d1016;
+  --code-border: #222734;
   --code-fg: #dfe3ea;
   --syn-keyword: #c792ea;
   --syn-string: #a5d6a7;
@@ -86,9 +90,10 @@
   --syn-fn: #82aaff;
   --syn-prop: #f78c9c;
   --syn-punct: #aab2bf;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 4px 12px rgb(0 0 0 / 0.45);
-  --shadow-lg: 0 16px 40px rgb(0 0 0 / 0.6);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.45);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 28px -14px rgb(0 0 0 / 0.7);
+  --shadow-lg: 0 2px 6px rgb(0 0 0 / 0.4), 0 28px 60px -24px rgb(0 0 0 / 0.85);
+  --glow: radial-gradient(60% 60% at 50% 40%, rgb(154 140 255 / 0.16), transparent 70%);
 }
 
 @theme inline {
@@ -121,10 +126,12 @@
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
@@ -140,6 +147,91 @@ body {
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Display typography: headings use the display face with tight tracking. */
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* Small uppercase label above section headings, with a leading rule (as in the reference design). */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.eyebrow::before {
+  content: "";
+  width: 1.75rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.7;
+}
+
+/* ---- Motion: transform/opacity only, disabled for reduced motion ---- */
+@keyframes float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-float {
+  animation: float 7s ease-in-out infinite;
+}
+.animate-float-slow {
+  animation: float 10s ease-in-out infinite;
+}
+.animate-rise {
+  animation: rise 0.8s var(--ease-out) both;
+}
+/*
+ * Scroll reveals. Content is only hidden when the inline head script has marked that
+ * JavaScript runs (data-motion), so it is never invisible without JS or with reduced motion.
+ */
+[data-motion] .reveal:not(.is-visible) {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+}
+.reveal {
+  transition:
+    opacity 0.7s var(--ease-out),
+    transform 0.7s var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-motion] .reveal:not(.is-visible) {
+    opacity: 1;
+    transform: none;
+  }
+  .animate-float,
+  .animate-float-slow {
+    animation: none;
+  }
 }
 
 /* Visible, consistent keyboard focus */
@@ -233,4 +325,16 @@ dialog::backdrop {
 }
 .cm-line.cm-error-line {
   background: var(--danger-soft);
+}
+
+/* Journey timeline: the connecting line draws in when the section enters view. */
+.journey-line,
+.journey-line-v {
+  transition: transform 1.4s var(--ease-out) 0.2s;
+}
+[data-motion] .journey:not(.is-visible) .journey-line {
+  transform: scaleX(0);
+}
+[data-motion] .journey:not(.is-visible) .journey-line-v {
+  transform: scaleY(0);
 }

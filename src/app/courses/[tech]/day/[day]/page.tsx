@@ -149,7 +149,7 @@ export default async function DayPage({ params }: { params: Promise<{ tech: stri
                       <span className="font-medium">{r.lesson.title}</span>
                       <span className="text-xs text-subtle">{r.lesson.minutes} min</span>
                     </span>
-                    <span className="mt-0.5 block text-sm text-muted">{r.lesson.summary}</span>
+                    <span className="mt-0.5 block text-sm text-muted">{renderInline(r.lesson.summary)}</span>
                   </span>
                   <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-subtle" aria-hidden />
                 </Link>

@@ -15,6 +15,7 @@ import { ActiveTimeTracker } from "@/components/lesson/active-time-tracker";
 import { BookmarkButton } from "@/components/lesson/bookmark-button";
 import { CompletionStatus } from "@/components/lesson/completion-status";
 import { CompletionPanel } from "@/components/lesson/completion-panel";
+import { LessonCourseProgress } from "@/components/lesson/course-progress";
 import { Badge, DifficultyBadge, TechBadges } from "@/components/ui/badge";
 
 export function generateStaticParams() {
@@ -85,8 +86,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           <div className="mb-1 text-xs font-medium text-subtle">
             Lesson {index + 1} of {mod.lessons.length} published in this module
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight">{lesson.title}</h1>
-          <p className="mt-2 text-[15px] text-muted">{lesson.summary}</p>
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-[2.2rem]">{lesson.title}</h1>
+          <p className="mt-2 text-[15px] text-muted">{renderInline(lesson.summary)}</p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <DifficultyBadge level={lesson.difficulty} />
             {lesson.optional && <Badge tone="warning">Optional / advanced</Badge>}
@@ -99,6 +100,7 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
               <BookmarkButton type="lesson" id={lesson.id} />
             </span>
           </div>
+          <LessonCourseProgress lessonId={lesson.id} />
           <LessonNav prev={prev?.id} next={next?.id} className="mt-4" />
         </header>
 
@@ -156,16 +158,16 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
         </section>
 
         {lesson.sections.map((s) => (
-          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="mt-10 scroll-mt-20">
-            <h2 id={`${s.id}-h`} className="mb-2 text-xl font-semibold tracking-tight">
+          <section key={s.id} id={s.id} aria-labelledby={`${s.id}-h`} className="mt-12 scroll-mt-20 border-t border-border pt-10">
+            <h2 id={`${s.id}-h`} className="mb-2 text-2xl font-semibold tracking-tight">
               {s.title}
             </h2>
             <Blocks blocks={s.blocks} />
           </section>
         ))}
 
-        <section id="playground" aria-labelledby="playground-h" className="mt-10 scroll-mt-20">
-          <h2 id="playground-h" className="mb-2 text-xl font-semibold tracking-tight">
+        <section id="playground" aria-labelledby="playground-h" className="mt-12 scroll-mt-20 border-t border-border pt-10">
+          <h2 id="playground-h" className="mb-2 text-2xl font-semibold tracking-tight">
             Try it yourself
           </h2>
           <p className="mb-3 text-sm text-muted">
@@ -175,8 +177,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
         </section>
 
         {lesson.bestPractices && lesson.bestPractices.length > 0 && (
-          <section id="best-practices" aria-labelledby="best-practices-h" className="mt-10 scroll-mt-20">
-            <h2 id="best-practices-h" className="mb-2 text-xl font-semibold tracking-tight">
+          <section id="best-practices" aria-labelledby="best-practices-h" className="mt-12 scroll-mt-20 border-t border-border pt-10">
+            <h2 id="best-practices-h" className="mb-2 text-2xl font-semibold tracking-tight">
               Best practices
             </h2>
             <ul className="list-disc space-y-1.5 pl-6 text-[15px]">
@@ -187,8 +189,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           </section>
         )}
 
-        <section id="common-mistakes" aria-labelledby="mistakes-h" className="mt-10 scroll-mt-20">
-          <h2 id="mistakes-h" className="mb-3 text-xl font-semibold tracking-tight">
+        <section id="common-mistakes" aria-labelledby="mistakes-h" className="mt-12 scroll-mt-20 border-t border-border pt-10">
+          <h2 id="mistakes-h" className="mb-3 text-2xl font-semibold tracking-tight">
             Common mistakes
           </h2>
           <div className="space-y-4">
@@ -207,8 +209,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           </div>
         </section>
 
-        <section id="debugging" aria-labelledby="debugging-h" className="mt-10 scroll-mt-20">
-          <h2 id="debugging-h" className="mb-2 text-xl font-semibold tracking-tight">
+        <section id="debugging" aria-labelledby="debugging-h" className="mt-12 scroll-mt-20 border-t border-border pt-10">
+          <h2 id="debugging-h" className="mb-2 text-2xl font-semibold tracking-tight">
             Debugging tips
           </h2>
           <ul className="list-disc space-y-1.5 pl-6 text-[15px]">
@@ -218,8 +220,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           </ul>
         </section>
 
-        <section id="summary" aria-labelledby="summary-h" className="mt-10 scroll-mt-20">
-          <h2 id="summary-h" className="mb-2 text-xl font-semibold tracking-tight">
+        <section id="summary" aria-labelledby="summary-h" className="mt-12 scroll-mt-20 border-t border-border pt-10">
+          <h2 id="summary-h" className="mb-2 text-2xl font-semibold tracking-tight">
             Quick revision
           </h2>
           <ul className="list-disc space-y-1.5 pl-6 text-[15px]">
@@ -252,8 +254,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           )}
         </section>
 
-        <section id="practice" aria-labelledby="practice-h" className="mt-10 scroll-mt-20">
-          <h2 id="practice-h" className="mb-1 text-xl font-semibold tracking-tight">
+        <section id="practice" aria-labelledby="practice-h" className="mt-12 scroll-mt-20 border-t border-border pt-10">
+          <h2 id="practice-h" className="mb-1 text-2xl font-semibold tracking-tight">
             Practice
           </h2>
           <p className="mb-4 text-sm text-muted">Answers are only checked when you submit. Hints and solutions are available if you get stuck.</p>
@@ -265,8 +267,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           </div>
         </section>
 
-        <section id="quiz" aria-labelledby="quiz-h" className="mt-10 scroll-mt-20">
-          <h2 id="quiz-h" className="mb-1 text-xl font-semibold tracking-tight">
+        <section id="quiz" aria-labelledby="quiz-h" className="mt-12 scroll-mt-20 border-t border-border pt-10">
+          <h2 id="quiz-h" className="mb-1 text-2xl font-semibold tracking-tight">
             End-of-lesson assessment
           </h2>
           <p className="mb-4 text-sm text-muted">Check your understanding. Every answer comes with an explanation. Your score is saved and feeds into mastery and revision, and you can retake it any time.</p>
@@ -280,8 +282,8 @@ export default async function LessonPage({ params }: { params: Promise<{ module:
           )}
         </section>
 
-        <section id="further-reading" aria-labelledby="further-reading-h" className="mt-10 scroll-mt-20">
-          <h2 id="further-reading-h" className="mb-3 text-xl font-semibold tracking-tight">
+        <section id="further-reading" aria-labelledby="further-reading-h" className="mt-12 scroll-mt-20 border-t border-border pt-10">
+          <h2 id="further-reading-h" className="mb-3 text-2xl font-semibold tracking-tight">
             Related and further reading
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">

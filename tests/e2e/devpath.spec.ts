@@ -7,7 +7,7 @@ test.describe("no accounts", () => {
     const res = await page.goto("/");
     expect(res?.status()).toBe(200);
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Learn Web Development, Step by Step." })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Build Your Web Development Skills, One Step at a Time." })).toBeVisible();
     await expect(page.getByRole("link", { name: /log in|sign up/i })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /log in|sign up/i })).toHaveCount(0);
     for (const url of ["/login", "/signup", "/account", "/forgot-password", "/reset-password", "/api/auth/get-session", "/api/progress"]) {
@@ -48,19 +48,41 @@ test.describe("no accounts", () => {
 });
 
 test.describe("dashboard and learning paths", () => {
-  test("new learners see the four paths and starting points, not empty statistics", async ({ page }) => {
+  test("new learners see the landing sections with real data, not empty statistics", async ({ page }) => {
     await page.goto("/");
     for (const id of ["frontend", "backend", "testing", "fullstack"]) await expect(page.getByTestId(`path-card-${id}`)).toBeVisible();
-    await expect(page.getByTestId("onboarding")).toBeVisible();
-    await expect(page.getByTestId("progress-overview")).toHaveCount(0);
+    await expect(page.getByTestId("path-card-frontend").getByTestId("path-availability")).toContainText("courses have lessons");
     await expect(page.getByTestId("path-card-frontend")).not.toContainText("Your progress");
+    await expect(page.getByTestId("progress-overview")).toHaveCount(0);
+    for (const h of ["Your Journey from Beginner to Developer", "Learn It. Practise It. Prove It.", "Build Real Projects", "Find Your Next Course"])
+      await expect(page.getByRole("heading", { level: 2, name: h })).toBeVisible();
+    // Hero actions work.
+    await page.getByTestId("start-learning").click();
+    await expect(page).toHaveURL(/\/learn\/html\//);
   });
 
-  test("hero search finds technologies", async ({ page }) => {
+  test("featured projects link to real project pages or their learning path", async ({ page }) => {
     await page.goto("/");
-    await page.getByTestId("hero-search").fill("cypress");
-    await page.getByTestId("hero-search").press("Enter");
-    await expect(page).toHaveURL(/\/search\?q=cypress/);
+    await page.getByTestId("project-card-todo-list").getByRole("link", { name: "View project" }).click();
+    await expect(page).toHaveURL(/\/projects\/todo-list$/);
+    await page.goto("/");
+    const planned = page.getByTestId("project-card-planned-express-api");
+    await expect(planned).toContainText("Coming soon");
+    await planned.getByRole("link", { name: /Learn the skills/ }).click();
+    await expect(page).toHaveURL(/\/paths\/backend$/);
+  });
+
+  test("course discovery filters by learning path and progress", async ({ page }) => {
+    await page.goto("/courses");
+    await page.getByTestId("filter-path").selectOption("testing");
+    await expect(page.getByTestId("tech-card-cypress")).toBeVisible();
+    await expect(page.getByTestId("tech-card-react")).toHaveCount(0);
+    await page.getByTestId("filter-progress").selectOption("in-progress");
+    await expect(page.getByRole("heading", { name: "No technologies match" })).toBeVisible();
+  });
+
+  test("search finds technologies", async ({ page }) => {
+    await page.goto("/search?q=cypress");
     await expect(page.getByRole("link", { name: /^Cypress/ }).first()).toBeVisible();
   });
 

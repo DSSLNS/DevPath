@@ -71,7 +71,20 @@ export interface Catalog {
   paths: LearningPath[];
   kb: { id: string; slug: string; title: string; category: KbCategory; tech: Tech[]; difficulty: Difficulty; summary: string; tags: string[] }[];
   challenges: { id: string; slug: string; title: string; topic: ChallengeTopic; difficulty: Difficulty; minutes: number; validation: "js" | "dom" | "manual" }[];
-  projects: { id: string; slug: string; title: string; order: number; difficulty: Difficulty; stepIds: string[]; checklistCount: number }[];
+  projects: {
+    id: string;
+    slug: string;
+    title: string;
+    order: number;
+    difficulty: Difficulty;
+    stepIds: string[];
+    checklistCount: number;
+    summary: string;
+    tech: Tech[];
+    hours: number;
+    skills: string[];
+    requirements: string[];
+  }[];
   glossary: { id: string; term: string }[];
   /** Metadata for every auto-gradable question (practice + quiz), keyed by exercise id. */
   questions: Record<string, CatalogQuestionMeta>;

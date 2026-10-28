@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BookMarked, Lightbulb, ListChecks, PlayCircle, Search, TriangleAlert } from "lucide-react";
+import { BookMarked, Lightbulb, ListChecks, PlayCircle, TriangleAlert } from "lucide-react";
 import { useCatalog } from "@/lib/catalog/context";
 import { recommendedNextLesson, weakTopics } from "@/lib/progress";
 import { pathProgress, startedTechnologies, technologyForLesson, techProgress } from "@/lib/courses";
@@ -12,11 +12,18 @@ import { buttonClass } from "@/components/ui/button";
 import { contentHref, contentTitle } from "@/components/bookmarks/content-ref";
 import { TechMonogram } from "@/components/courses/tech-card";
 import { CareerPathGrid } from "@/components/paths/path-card";
+import { CourseCatalog } from "@/components/courses/course-catalog";
+import { FeaturedProjects } from "@/components/projects/project-showcase";
+import { Section, SectionHeading } from "@/components/ui/section";
+import { Hero } from "@/components/home/hero";
+import { Journey } from "@/components/home/journey";
+import { Features } from "@/components/home/features";
 import { ProgressOverview, TodayPlan } from "./learning-overview";
 
 export function Dashboard() {
   const meta = useStoreMeta();
   const s = useLearnerState();
+  const catalog = useCatalog();
   const hasActivity = Object.keys(s.lessons).length > 0 || s.quizAttempts.length > 0 || Object.values(s.exercises).some((e) => e.attempts > 0);
 
   return (
@@ -24,71 +31,66 @@ export function Dashboard() {
       <Hero />
       {meta.hydrated && hasActivity && <ContinueLearning />}
 
-      <section aria-labelledby="paths-h" className="mt-10">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 id="paths-h" className="text-xl font-semibold tracking-tight">
-              Choose your learning path
-            </h2>
-            <p className="text-sm text-muted">Four paths, built from shared courses. Progress in a course counts towards every path that uses it.</p>
-          </div>
-          <Link href="/courses" className="text-sm font-medium text-primary hover:underline">
-            Browse all courses
-          </Link>
-        </div>
+      <Section id="paths" labelledBy="paths-h">
+        <SectionHeading
+          id="paths-h"
+          eyebrow="Learning paths"
+          title="Choose Your Learning Path"
+          description="Four paths built from shared courses. Progress in a course counts towards every path that uses it, and nothing is locked."
+          action={
+            <Link href="/paths" className={buttonClass("secondary")}>
+              Compare paths
+            </Link>
+          }
+        />
         <CareerPathGrid />
-      </section>
+      </Section>
 
-      {!meta.hydrated ? (
-        <div className="mt-10 h-40 animate-pulse rounded-lg bg-surface" aria-busy="true" aria-label="Loading your progress" />
-      ) : hasActivity ? (
-        <ReturningLearner />
-      ) : (
-        <NewLearner />
+      {meta.hydrated && hasActivity && (
+        <Section labelledBy="progress-h" className="pt-0">
+          <SectionHeading id="progress-h" eyebrow="Your learning" title="Pick up where you left off" description="Everything here comes from progress saved in this browser." />
+          <ReturningLearner />
+        </Section>
       )}
+
+      <Journey />
+      <Features />
+
+      <Section labelledBy="projects-h">
+        <SectionHeading
+          id="projects-h"
+          eyebrow="Projects"
+          title="Build Real Projects"
+          description="Apply what you learn in guided projects with requirements, milestones and testing checklists."
+          action={
+            <Link href="/projects" className={buttonClass("secondary")}>
+              All projects
+            </Link>
+          }
+        />
+        <FeaturedProjects />
+      </Section>
+
+      <Section labelledBy="discover-h">
+        <SectionHeading
+          id="discover-h"
+          eyebrow="Course discovery"
+          title="Find Your Next Course"
+          description="Search and filter by path, difficulty, availability and your progress. Courses still being written are labelled honestly."
+          action={
+            <Link href="/courses" className={buttonClass("secondary")}>
+              All {catalog.technologies.length} technologies
+            </Link>
+          }
+        />
+        <CourseCatalog featuredIds={DISCOVERY_IDS} headingLevel={3} />
+      </Section>
     </div>
   );
 }
 
-function Hero() {
-  return (
-    <section className="rounded-2xl border border-border bg-surface px-5 py-8 shadow-sm sm:px-10 sm:py-12" aria-labelledby="hero-h">
-      <h1 id="hero-h" className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
-        Learn Web Development, Step by Step.
-      </h1>
-      <p className="mt-3 max-w-2xl text-[15px] text-muted sm:text-base">
-        Choose your learning path, master the fundamentals, practise with real examples, and build projects at your own pace.
-      </p>
-      <form action="/search" role="search" className="mt-6 flex max-w-2xl flex-col gap-2 sm:flex-row">
-        <label htmlFor="hero-search" className="sr-only">
-          Search courses, lessons, notes and exercises
-        </label>
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-subtle" aria-hidden />
-          <input
-            id="hero-search"
-            name="q"
-            type="search"
-            placeholder="Search HTML, JavaScript, React, Node.js, Cypress..."
-            className="h-11 w-full rounded-lg border border-border bg-bg pr-3 pl-9 text-sm"
-            data-testid="hero-search"
-          />
-        </div>
-        <button type="submit" className={buttonClass("secondary", "md", "h-11 justify-center")}>
-          Search
-        </button>
-      </form>
-      <div className="mt-6 flex flex-wrap gap-2">
-        <Link href="/paths" className={buttonClass("primary", "md", "h-10")} data-testid="explore-paths">
-          Explore Learning Paths <ArrowRight className="h-4 w-4" aria-hidden />
-        </Link>
-        <Link href="/courses" className={buttonClass("ghost", "md", "h-10")}>
-          Explore all courses
-        </Link>
-      </div>
-    </section>
-  );
-}
+/** Courses shown in home-page discovery; the full catalog lives on /courses. */
+const DISCOVERY_IDS = ["html", "css", "javascript", "typescript", "react", "nextjs", "nodejs", "express", "api-testing", "cypress", "playwright", "testing-fundamentals"];
 
 function ContinueLearning() {
   const catalog = useCatalog();
@@ -131,49 +133,6 @@ function ContinueLearning() {
           ))}
         </ul>
       </Card>
-    </section>
-  );
-}
-
-function NewLearner() {
-  const catalog = useCatalog();
-  const starts = [
-    { techId: "html", why: "Never coded before? Build your first web page today." },
-    { techId: "javascript", why: "Know some HTML and CSS? Make pages interactive." },
-    { techId: "testing-fundamentals", why: "Heading into QA? Learn how testing works first." },
-  ]
-    .map((x) => ({ ...x, tech: catalog.technologies.find((t) => t.id === x.techId) }))
-    .filter((x) => x.tech);
-  return (
-    <section aria-labelledby="start-h" className="mt-10" data-testid="onboarding">
-      <h2 id="start-h" className="text-xl font-semibold tracking-tight">
-        Not sure where to start?
-      </h2>
-      <p className="mb-4 text-sm text-muted">
-        Pick one of these and begin straight away. No account is needed: your progress is saved in this browser on this device.
-      </p>
-      <div className="grid gap-3 md:grid-cols-3">
-        {starts.map(({ tech, why }) => {
-          const first = tech!.lessonIds[0];
-          return (
-            <Link
-              key={tech!.id}
-              href={first ? catalog.lessonUrl(first) : `/courses/${tech!.id}`}
-              className="flex items-start gap-3 rounded-lg border border-border bg-surface p-4 hover:border-border-strong"
-              data-testid={`start-${tech!.id}`}
-            >
-              <TechMonogram tech={tech!} />
-              <span className="min-w-0">
-                <span className="block font-medium">{tech!.name}</span>
-                <span className="block text-sm text-muted">{why}</span>
-                <span className="mt-1 inline-flex items-center gap-1 text-sm font-medium text-primary">
-                  {first ? "Start the first lesson" : "Read the notes"} <ArrowRight className="h-3.5 w-3.5" aria-hidden />
-                </span>
-              </span>
-            </Link>
-          );
-        })}
-      </div>
     </section>
   );
 }

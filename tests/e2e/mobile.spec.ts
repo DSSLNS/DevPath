@@ -8,8 +8,8 @@ test("mobile navigation uses bottom nav and drawer without overflow", async ({ p
   await page.getByRole("button", { name: "Open navigation menu" }).click();
   const drawer = page.getByRole("dialog", { name: "Navigation" });
   await expect(drawer).toBeVisible();
-  await drawer.getByRole("link", { name: "Testing & Automation" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Testing & Automation" })).toBeVisible();
+  await drawer.getByRole("link", { name: "Learning Paths" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Learning paths" })).toBeVisible();
   await expect(drawer).toBeHidden();
 });
 

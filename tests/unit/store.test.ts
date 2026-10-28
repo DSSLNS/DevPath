@@ -22,7 +22,7 @@ describe("parseState", () => {
     expect(Object.keys(state.lessons)).toEqual(["good"]);
     expect(state.notes).toHaveLength(1);
     expect(state.notes[0].tags).toEqual(["a"]);
-    expect(state.settings.theme).toBe("system");
+    expect(state.settings.theme).toBe("dark");
     expect(state.settings.masteryThreshold).toBe(80);
     expect(state.settings.editorFontSize).toBe(16);
   });

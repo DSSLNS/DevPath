@@ -89,7 +89,7 @@ export function CompletionPanel({
           </Button>
         )}
         {next && (
-          <Link href={catalog.lessonUrl(next.id)} className={buttonClass(done ? "primary" : "secondary")}>
+          <Link href={catalog.lessonUrl(next.id)} className={buttonClass(done ? "primary" : "secondary", "md", "h-auto! min-h-9 max-w-full py-2 whitespace-normal!")}>
             Next lesson: {next.title}
           </Link>
         )}
